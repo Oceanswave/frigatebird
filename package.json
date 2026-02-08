@@ -14,15 +14,15 @@
     "lint:fix": "biome check --write ."
   },
   "dependencies": {
-    "commander": "^13.0.0",
-    "playwright": "^1.49.0",
     "@steipete/sweet-cookie": "^0.1.0",
-    "kleur": "^4.1.5"
+    "commander": "^13.0.0",
+    "kleur": "^4.1.5",
+    "playwright": "^1.49.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.9.0",
     "@types/node": "^22.0.0",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.0",
-    "@biomejs/biome": "^1.9.0"
+    "typescript": "^5.7.0"
   }
 }
