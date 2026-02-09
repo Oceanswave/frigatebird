@@ -1,40 +1,52 @@
 ---
 name: frigatebird
-description: Use Frigatebird to interact with X from the CLI with bird-compatible commands plus x-list-manager list automation. Use when users ask to read timelines/tweets, manage follows/lists, or automate list membership without X API keys.
-argument-hint: 'whoami, read https://x.com/user/status/123, search "from:openai", add "AI News" @openai @anthropicai'
+description: Use the frigatebird npm package to interact with X from the CLI with bird-style command parity, posting/reply/article support, and list automation without X API keys.
+argument-hint: 'whoami, read https://x.com/user/status/123, tweet "hello", article "Launch notes" "We shipped", add "AI News" @openai @anthropicai'
 ---
 
 # Frigatebird Skill
 
-Frigatebird is a Playwright-first CLI that preserves `bird` command ergonomics and includes `x-list-manager` list operations.
+Frigatebird is a Playwright-first CLI and npm package (`frigatebird`) that preserves `bird` command ergonomics while running against X via browser session cookies.
 
 ## Use This Skill When
 
-- The user asks for `bird`-style CLI interactions on X.
-- The user wants list automation (`add`, `remove`, `batch`, `refresh`).
-- The user wants browser-cookie-based operation without API keys.
+- The user asks for `bird`-style CLI workflows on X.
+- The user needs posting/reply/article actions from CLI.
+- The user needs list automation (`add`, `remove`, `batch`, `lists`).
+- The user needs API-key-free browser-cookie operation.
+
+## Package and Install
+
+- npm package: `frigatebird`
+- Global install: `npm install -g frigatebird`
+- Local use: `npx frigatebird <command>`
 
 ## Core Workflow
 
-1. Verify auth/session health:
-   - `npx tsx src/cli.ts check`
-   - `npx tsx src/cli.ts whoami`
-2. For read-only tasks, prefer JSON output:
-   - `npx tsx src/cli.ts read <tweet-id-or-url> --json`
-   - `npx tsx src/cli.ts search "<query>" --json`
-3. For list-management tasks:
-   - `npx tsx src/cli.ts add "<List Name>" @handle1 @handle2`
-   - `npx tsx src/cli.ts remove @handle "<List Name>"`
-   - `npx tsx src/cli.ts batch accounts.json`
-4. Use pagination controls for large reads:
+1. Validate auth/session:
+   - `frigatebird check`
+   - `frigatebird whoami`
+2. Read flows (use JSON when scripting):
+   - `frigatebird read <tweet-id-or-url> --json`
+   - `frigatebird search "<query>" --json`
+   - `frigatebird home --json`
+3. Mutation flows:
+   - `frigatebird tweet "<text>"`
+   - `frigatebird reply <tweet-id-or-url> "<text>"`
+   - `frigatebird article "<title>" "<body>"`
+4. List automation:
+   - `frigatebird add "<List Name>" @handle1 @handle2`
+   - `frigatebird remove @handle "<List Name>"`
+   - `frigatebird batch accounts.json`
+5. For larger reads, use paging controls:
    - `--all`, `--max-pages`, `--cursor`, `-n`
 
-## Command Groups
+## Feature Coverage
 
-- Posting/mutations: `tweet`, `post`, `reply`, `like`, `retweet`, `follow`, `unfollow`, `unbookmark`
+- Posting/mutations: `tweet`, `post`, `reply`, `article`, `like`, `retweet`, `follow`, `unfollow`, `unbookmark`
 - Read/timelines: `read`, `replies`, `thread`, `search`, `mentions`, `user-tweets`, `home`, `bookmarks`, `likes`, `list-timeline`, `news`, `about`
 - Identity/health: `check`, `whoami`, `query-ids`, `help`
-- List automation: `refresh`, `add`, `remove`, `batch`, `lists`, `list`
+- List automation: `add`, `remove`, `batch`, `lists`, `list`, `refresh`
 
 ## Options That Matter Most
 
@@ -43,6 +55,12 @@ Frigatebird is a Playwright-first CLI that preserves `bird` command ergonomics a
 - Pagination: `-n`, `--all`, `--max-pages`, `--cursor`, `--delay`
 - Output: `--json`, `--json-full`
 - Media posting: `--media`, `--alt`
+
+## Live E2E Notes
+
+- Standard live mutation e2e does not run premium-feature checks by default.
+- Premium-feature e2e opt-in:
+  - `npm run test:e2e:live -- --list-name <name> --enable-premium-features-e2e --article-cookie-source chrome --article-expected-handle-prefix <prefix>`
 
 ## Caveats
 
