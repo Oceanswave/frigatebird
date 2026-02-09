@@ -22,6 +22,23 @@ on:
         required: false
         default: "Oceanswave"
         type: string
+      premium_features_e2e:
+        description: "Run premium-feature live e2e checks (article mutation)"
+        required: false
+        default: false
+        type: boolean
+      article_cookie_source:
+        description: "Cookie source used for article mutation checks"
+        required: false
+        default: "chrome"
+        type: string
+      article_expected_handle_prefix:
+        description: "Safety guard prefix for article mutation account"
+        required: false
+        default: "Oceanswave"
+        type: string
+  schedule:
+    - cron: "17 9 * * 1"
 
 concurrency:
   group: live-e2e-${{ github.ref }}
@@ -30,14 +47,14 @@ concurrency:
 jobs:
   live-mutation:
     name: Live Mutation Coverage
+    if: github.event_name != 'schedule' || vars.FRIGATEBIRD_ENABLE_SCHEDULED_LIVE_E2E == '1'
     runs-on: ubuntu-latest
     permissions:
       contents: read
     env:
       FRIGATEBIRD_LIVE_E2E: "1"
-      FRIGATEBIRD_LIVE_EXPECTED_HANDLE_PREFIX: ${{ github.event.inputs.expected_handle_prefix || 'frigatebird_' }}
-      FRIGATEBIRD_LIVE_TARGET_HANDLE: ${{ github.event.inputs.target_handle || 'Oceanswave' }}
-      FRIGATEBIRD_LIVE_ENABLE_PREMIUM_FEATURES_E2E: "0"
+      FRIGATEBIRD_LIVE_EXPECTED_HANDLE_PREFIX: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.expected_handle_prefix || vars.FRIGATEBIRD_LIVE_E2E_EXPECTED_HANDLE_PREFIX || 'frigatebird_' }}
+      FRIGATEBIRD_LIVE_TARGET_HANDLE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.target_handle || vars.FRIGATEBIRD_LIVE_E2E_TARGET_HANDLE || 'Oceanswave' }}
       FRIGATEBIRD_AUTH_TOKEN: ${{ secrets.FRIGATEBIRD_AUTH_TOKEN }}
       FRIGATEBIRD_CT0: ${{ secrets.FRIGATEBIRD_CT0 }}
       NO_COLOR: "1"
@@ -51,6 +68,20 @@ jobs:
         with:
           node-version: 24
           cache: npm
+
+      - name: Resolve live mutation inputs
+        run: |
+          LIST_NAME="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.list_name || vars.FRIGATEBIRD_LIVE_E2E_LIST_NAME }}"
+          COOKIE_SOURCE="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.cookie_source || vars.FRIGATEBIRD_LIVE_E2E_COOKIE_SOURCE || 'safari' }}"
+          PREMIUM_FEATURES_E2E="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.premium_features_e2e || vars.FRIGATEBIRD_LIVE_E2E_PREMIUM || 'false' }}"
+          ARTICLE_COOKIE_SOURCE="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.article_cookie_source || vars.FRIGATEBIRD_LIVE_E2E_ARTICLE_COOKIE_SOURCE || 'chrome' }}"
+          ARTICLE_EXPECTED_HANDLE_PREFIX="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.article_expected_handle_prefix || vars.FRIGATEBIRD_LIVE_E2E_ARTICLE_EXPECTED_HANDLE_PREFIX || 'Oceanswave' }}"
+
+          echo "LIVE_LIST_NAME=$LIST_NAME" >> "$GITHUB_ENV"
+          echo "LIVE_COOKIE_SOURCE=$COOKIE_SOURCE" >> "$GITHUB_ENV"
+          echo "LIVE_PREMIUM_FEATURES_E2E=$PREMIUM_FEATURES_E2E" >> "$GITHUB_ENV"
+          echo "LIVE_ARTICLE_COOKIE_SOURCE=$ARTICLE_COOKIE_SOURCE" >> "$GITHUB_ENV"
+          echo "LIVE_ARTICLE_EXPECTED_HANDLE_PREFIX=$ARTICLE_EXPECTED_HANDLE_PREFIX" >> "$GITHUB_ENV"
 
       - name: Validate live mutation inputs
         run: |
@@ -66,8 +97,8 @@ jobs:
             missing=1
           fi
 
-          if [ -z "${{ github.event.inputs.list_name }}" ]; then
-            echo "Missing required workflow input: list_name"
+          if [ -z "$LIVE_LIST_NAME" ]; then
+            echo "Missing list name. Provide workflow_dispatch input list_name or set repo variable FRIGATEBIRD_LIVE_E2E_LIST_NAME for scheduled runs."
             missing=1
           fi
 
@@ -83,6 +114,17 @@ jobs:
 
       - name: Run live mutation e2e
         run: |
-          npm run test:e2e:live -- \
-            --list-name "${{ github.event.inputs.list_name }}" \
-            --cookie-source "${{ github.event.inputs.cookie_source || 'safari' }}"
+          args=(
+            --list-name "$LIVE_LIST_NAME"
+            --cookie-source "$LIVE_COOKIE_SOURCE"
+          )
+
+          if [ "$LIVE_PREMIUM_FEATURES_E2E" = "true" ] || [ "$LIVE_PREMIUM_FEATURES_E2E" = "1" ]; then
+            args+=(
+              --enable-premium-features-e2e
+              --article-cookie-source "$LIVE_ARTICLE_COOKIE_SOURCE"
+              --article-expected-handle-prefix "$LIVE_ARTICLE_EXPECTED_HANDLE_PREFIX"
+            )
+          fi
+
+          npm run test:e2e:live -- "${args[@]}"

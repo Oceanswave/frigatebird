@@ -964,4 +964,308 @@ describe("PlaywrightXClient methods", () => {
 		expect(news.items[0].relatedTweets?.length).toBe(1);
 		expect(about.handle).toBe("tester");
 	});
+
+	it("uses withPage headless override and normalizes marked errors", async () => {
+		const sessions = sessionStub();
+		const client: any = new PlaywrightXClient(
+			{ ...options, headless: true },
+			sessions as any,
+		);
+
+		await client.withPage(async () => "ok", false);
+		expect(sessions.withSession).toHaveBeenCalledWith(
+			expect.objectContaining({ headless: false }),
+			expect.any(Function),
+		);
+
+		const normalized = client.normalizeError(
+			new Error("[FRIGATEBIRD_HEADLESS_RETRY] temporary"),
+		);
+		expect(normalized.message).toBe("temporary");
+		const normalizedUnknown = client.normalizeError("plain failure");
+		expect(normalizedUnknown.message).toBe("plain failure");
+	});
+
+	it("dismisses blocking overlays through escape and forced click fallback", async () => {
+		const client: any = new PlaywrightXClient(options, sessionStub() as any);
+		let maskVisible = true;
+		const maskClick = vi.fn(async () => {
+			maskVisible = false;
+		});
+		const pressEscape = vi.fn(async () => {});
+		const waitForTimeout = vi.fn(async () => {});
+
+		const page = {
+			locator: (selector: string) => {
+				if (selector.includes('data-testid="twc-cc-mask"')) {
+					return {
+						first: () => ({
+							isVisible: async () => maskVisible,
+							click: maskClick,
+						}),
+					};
+				}
+				return {
+					first: () => ({
+						isVisible: async () => false,
+						click: async () => {},
+					}),
+				};
+			},
+			keyboard: { press: pressEscape },
+			waitForTimeout,
+		};
+
+		await client.dismissBlockingLayers(page);
+
+		expect(pressEscape).toHaveBeenCalledWith("Escape");
+		expect(maskClick).toHaveBeenCalledWith({ force: true });
+	});
+
+	it("recovers composer from home and reports failure when composer is missing", async () => {
+		const client: any = new PlaywrightXClient(options, sessionStub() as any);
+		const goto = vi.fn(async () => {});
+		const page = pageStub({ goto });
+
+		client.dismissBlockingLayers = vi.fn(async () => {});
+		client.clickFirstVisible = vi.fn(async () => false);
+		client.waitForComposer = vi
+			.fn()
+			.mockResolvedValueOnce(undefined)
+			.mockRejectedValueOnce(new Error("missing"));
+
+		const recovered = await client.recoverComposerFromHome(page, 1000);
+		const failed = await client.recoverComposerFromHome(page, 1000);
+
+		expect(recovered).toBe(true);
+		expect(failed).toBe(false);
+		expect(goto).toHaveBeenCalledWith("https://x.com/home", {
+			waitUntil: "domcontentloaded",
+		});
+	});
+
+	it("filters bookmark thread chains with metadata options", () => {
+		const client: any = new PlaywrightXClient(options, sessionStub() as any);
+		const thread = [
+			{ id: "1", text: "root", url: "u1", authorHandle: "a" },
+			{ id: "2", text: "middle", url: "u2", authorHandle: "a" },
+			{ id: "3", text: "other", url: "u3", authorHandle: "b" },
+		];
+
+		const rootOnly = client.filterThreadForBookmark(thread, thread[1], {
+			expandRootOnly: true,
+		});
+		expect(rootOnly).toEqual([thread[1]]);
+
+		const filtered = client.filterThreadForBookmark(thread, thread[1], {
+			authorChain: true,
+			includeParent: true,
+			threadMeta: true,
+		});
+		expect(filtered.length).toBe(2);
+		expect(filtered.every((item: any) => item.isThread)).toBe(true);
+		expect(filtered.some((item: any) => item.isBookmarkedTweet)).toBe(true);
+	});
+
+	it("navigates follow tabs for user id and current user handle", async () => {
+		const sessions = sessionStub();
+		const client: any = new PlaywrightXClient(options, sessions as any);
+		const goto = vi.fn(async () => {});
+		const waitForSelector = vi.fn(async () => {});
+		const page = { goto, waitForSelector };
+
+		client.ensureAuth = vi.fn(async () => {});
+		await client.navigateFollowTab(page, "following", "123");
+		await client.navigateFollowTab(page, "followers");
+
+		expect(goto).toHaveBeenCalledWith("https://x.com/i/user/123/following", {
+			waitUntil: "domcontentloaded",
+		});
+		expect(goto).toHaveBeenCalledWith("https://x.com/tester/followers", {
+			waitUntil: "domcontentloaded",
+		});
+
+		(sessions.whoAmI as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+			name: "Tester",
+		});
+		await expect(client.navigateFollowTab(page, "followers")).rejects.toThrow(
+			"Unable to resolve current user handle",
+		);
+	});
+
+	it("opens list membership dialog via fallback profile menu scanning", async () => {
+		const client: any = new PlaywrightXClient(options, sessionStub() as any);
+		const goto = vi.fn(async () => {});
+		const waitForSelector = vi.fn(async () => {});
+		const waitForTimeout = vi.fn(async () => {});
+		const press = vi.fn(async () => {});
+		const buttons = [
+			{ isVisible: async () => true, click: async () => {} },
+			{ isVisible: async () => true, click: async () => {} },
+		];
+
+		const page = {
+			goto,
+			waitForSelector,
+			waitForTimeout,
+			keyboard: { press },
+			locator: (selector: string) => {
+				if (selector.includes('main button[aria-haspopup="menu"]')) {
+					return {
+						count: async () => buttons.length,
+						nth: (index: number) => buttons[index],
+					};
+				}
+				return locatorStub();
+			},
+		};
+
+		client.firstVisibleLocator = vi
+			.fn()
+			.mockResolvedValueOnce(null)
+			.mockResolvedValueOnce(null)
+			.mockResolvedValueOnce({ click: async () => {} });
+		client.clickFirstVisible = vi.fn(async () => true);
+
+		const dialogSelector = await client.openListMembershipDialog(
+			page,
+			"@target",
+		);
+		expect(dialogSelector).toContain('[role="dialog"]');
+		expect(press).toHaveBeenCalledWith("Escape");
+	});
+
+	it("throws when list membership menu item cannot be clicked", async () => {
+		const client: any = new PlaywrightXClient(options, sessionStub() as any);
+		const page = {
+			goto: async () => {},
+			waitForSelector: async () => {},
+			waitForTimeout: async () => {},
+			keyboard: { press: async () => {} },
+			locator: () => locatorStub(),
+		};
+
+		client.firstVisibleLocator = vi.fn(async () => ({ click: async () => {} }));
+		client.clickFirstVisible = vi.fn(async () => false);
+
+		await expect(
+			client.openListMembershipDialog(page, "@target"),
+		).rejects.toThrow('Could not locate "Add/remove from Lists" menu item');
+	});
+
+	it("sets list membership for added/already/not-found/error outcomes", async () => {
+		const client: any = new PlaywrightXClient(options, sessionStub() as any);
+		const press = vi.fn(async () => {});
+		const checkbox = {
+			innerText: async () => "Test List",
+			getAttribute: async () => "false",
+			click: async () => {},
+		};
+		const page = {
+			locator: (selector: string) => {
+				if (selector.includes('[role="checkbox"]')) {
+					return {
+						count: async () => 1,
+						nth: () => checkbox,
+					};
+				}
+				return locatorStub();
+			},
+			keyboard: { press },
+		};
+
+		client.openListMembershipDialog = vi.fn(async () => '[role="dialog"]');
+		client.clickFirstVisible = vi.fn(async () => false);
+
+		const added = await client.setListMembership(page, "Test List", "@a", true);
+		expect(added.status).toBe("added");
+		expect(press).toHaveBeenCalledWith("Escape");
+
+		const alreadyCheckbox = {
+			innerText: async () => "Test List",
+			getAttribute: async () => "true",
+			click: async () => {},
+		};
+		const alreadyPage = {
+			locator: () => ({
+				count: async () => 1,
+				nth: () => alreadyCheckbox,
+			}),
+			keyboard: { press },
+		};
+		const already = await client.setListMembership(
+			alreadyPage,
+			"Test List",
+			"@a",
+			true,
+		);
+		expect(already.status).toBe("already");
+
+		const missingCheckbox = {
+			innerText: async () => "Different List",
+			getAttribute: async () => "false",
+			click: async () => {},
+		};
+		const missingPage = {
+			locator: () => ({
+				count: async () => 1,
+				nth: () => missingCheckbox,
+			}),
+			keyboard: { press },
+		};
+		const missing = await client.setListMembership(
+			missingPage,
+			"Test List",
+			"@a",
+			true,
+		);
+		expect(missing.status).toBe("error");
+
+		client.openListMembershipDialog = vi.fn(async () => {
+			throw new Error("dialog failed");
+		});
+		const errored = await client.setListMembership(
+			page,
+			"Test List",
+			"@a",
+			true,
+		);
+		expect(errored.status).toBe("error");
+	});
+
+	it("bookmarks honors folder targets and unbookmark captures thrown errors", async () => {
+		vi.spyOn(scrape, "collectTweets").mockResolvedValue({
+			items: [
+				{ id: "2", text: "new", url: "u2" },
+				{ id: "1", text: "old", url: "u1", createdAt: "2026-01-01" },
+			],
+			pagesFetched: 1,
+		} as any);
+
+		const goto = vi.fn(async () => {});
+		const client: any = new PlaywrightXClient(options, sessionStub() as any);
+		client.withPage = vi.fn(async (task: any) => task(pageStub({ goto })));
+		client.ensureAuth = vi.fn(async () => {});
+
+		const bookmarks = await client.bookmarks({
+			count: 2,
+			all: false,
+			delayMs: 10,
+			folderId: "999",
+			includeAncestorBranches: true,
+			sortChronological: true,
+		} as any);
+
+		expect(goto).toHaveBeenCalledWith("https://x.com/i/bookmarks/999", {
+			waitUntil: "domcontentloaded",
+		});
+		expect(bookmarks.warnings?.[0]).toContain("full-chain bookmark modes");
+
+		client.ensureAuth = vi.fn(async () => {
+			throw new Error("auth failed");
+		});
+		const unbookmark = await client.unbookmark(["1"]);
+		expect(unbookmark.errors).toBe(1);
+		expect(unbookmark.details[0]?.error).toContain("auth failed");
+	});
 });

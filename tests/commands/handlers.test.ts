@@ -213,6 +213,250 @@ describe("command handlers", () => {
 		});
 	});
 
+	it("captures compat-json contracts for read/list handlers", async () => {
+		const handlers = createHandlers({
+			client,
+			output,
+			compatJson: true,
+			quoteDepth: 2,
+		});
+		const jsonSpy = output.json as unknown as ReturnType<typeof vi.fn>;
+
+		(client.read as ReturnType<typeof vi.fn>).mockResolvedValue({
+			id: "10",
+			text: "read tweet",
+			url: "https://x.com/i/web/status/10",
+			authorName: "Reader",
+			authorHandle: "reader",
+			quotedTweet: {
+				id: "9",
+				text: "quoted",
+				url: "https://x.com/i/web/status/9",
+				authorName: "Quoted",
+				authorHandle: "quoted",
+			},
+		});
+		(client.replies as ReturnType<typeof vi.fn>).mockResolvedValue({
+			items: [
+				{
+					id: "11",
+					text: "reply 1",
+					url: "https://x.com/i/web/status/11",
+					authorName: "Reply",
+					authorHandle: "reply",
+				},
+			],
+			nextCursor: "replies-cursor",
+			pagesFetched: 1,
+			warnings: ["reply warning"],
+		});
+		(client.thread as ReturnType<typeof vi.fn>).mockResolvedValue({
+			items: [
+				{
+					id: "12",
+					text: "thread 1",
+					url: "https://x.com/i/web/status/12",
+					authorName: "Thread",
+					authorHandle: "thread",
+				},
+			],
+			nextCursor: "thread-cursor",
+			pagesFetched: 2,
+		});
+		(client.search as ReturnType<typeof vi.fn>).mockResolvedValue({
+			items: [
+				{
+					id: "13",
+					text: "search 1",
+					url: "https://x.com/i/web/status/13",
+					authorName: "Search",
+					authorHandle: "search",
+				},
+			],
+			nextCursor: "search-cursor",
+			pagesFetched: 1,
+		});
+		(client.mentions as ReturnType<typeof vi.fn>).mockResolvedValue({
+			items: [
+				{
+					id: "14",
+					text: "mention 1",
+					url: "https://x.com/i/web/status/14",
+					authorName: "Mention",
+					authorHandle: "mention",
+				},
+			],
+			nextCursor: "mentions-cursor",
+			pagesFetched: 1,
+		});
+		(client.userTweets as ReturnType<typeof vi.fn>).mockResolvedValue({
+			items: [
+				{
+					id: "15",
+					text: "user tweet 1",
+					url: "https://x.com/i/web/status/15",
+					authorName: "User",
+					authorHandle: "user",
+				},
+			],
+			nextCursor: "user-cursor",
+			pagesFetched: 1,
+		});
+		(client.home as ReturnType<typeof vi.fn>).mockResolvedValue({
+			items: [
+				{
+					id: "16",
+					text: "home tweet 1",
+					url: "https://x.com/i/web/status/16",
+					authorName: "Home",
+					authorHandle: "home",
+				},
+			],
+			nextCursor: "home-cursor",
+			pagesFetched: 1,
+		});
+		(client.bookmarks as ReturnType<typeof vi.fn>).mockResolvedValue({
+			items: [
+				{
+					id: "17",
+					text: "bookmark 1",
+					url: "https://x.com/i/web/status/17",
+					authorName: "Bookmark",
+					authorHandle: "bookmark",
+				},
+			],
+			nextCursor: "bookmarks-cursor",
+			pagesFetched: 1,
+		});
+		(client.likes as ReturnType<typeof vi.fn>).mockResolvedValue({
+			items: [
+				{
+					id: "18",
+					text: "liked 1",
+					url: "https://x.com/i/web/status/18",
+					authorName: "Liked",
+					authorHandle: "liked",
+				},
+			],
+			nextCursor: "likes-cursor",
+			pagesFetched: 1,
+		});
+		(client.listTimeline as ReturnType<typeof vi.fn>).mockResolvedValue({
+			items: [
+				{
+					id: "19",
+					text: "list timeline 1",
+					url: "https://x.com/i/web/status/19",
+					authorName: "List",
+					authorHandle: "list",
+				},
+			],
+			nextCursor: "list-timeline-cursor",
+			pagesFetched: 1,
+		});
+		(client.following as ReturnType<typeof vi.fn>).mockResolvedValue({
+			items: [
+				{
+					id: "21",
+					handle: "following_user",
+					name: "Following User",
+					bio: "Following bio",
+				},
+			],
+			nextCursor: "following-cursor",
+			pagesFetched: 1,
+		});
+		(client.followers as ReturnType<typeof vi.fn>).mockResolvedValue({
+			items: [
+				{
+					id: "22",
+					handle: "follower_user",
+					name: "Follower User",
+					bio: "Follower bio",
+				},
+			],
+			nextCursor: "followers-cursor",
+			pagesFetched: 1,
+		});
+		(client.lists as ReturnType<typeof vi.fn>).mockResolvedValue({
+			items: [
+				{
+					id: "23",
+					name: "List Name",
+					description: "List Description",
+					url: "https://x.com/i/lists/23",
+				},
+			],
+			nextCursor: "lists-cursor",
+			pagesFetched: 1,
+		});
+		(client.news as ReturnType<typeof vi.fn>).mockResolvedValue({
+			items: [
+				{
+					id: "24",
+					headline: "Headline",
+					sourceTab: "news",
+					summary: "summary",
+				},
+			],
+			nextCursor: "news-cursor",
+			pagesFetched: 1,
+		});
+		(client.about as ReturnType<typeof vi.fn>).mockResolvedValue({
+			name: "About User",
+			handle: "about_user",
+		});
+		(client.whoami as ReturnType<typeof vi.fn>).mockResolvedValue({
+			name: "Whoami User",
+			handle: "whoami_user",
+		});
+		(client.queryIds as ReturnType<typeof vi.fn>).mockResolvedValue({
+			mode: "playwright",
+			refreshed: true,
+			note: "compat",
+			timestamp: "2026-02-09T00:00:00.000Z",
+		});
+		(client.refresh as ReturnType<typeof vi.fn>).mockResolvedValue({
+			loggedIn: true,
+			source: "browser",
+			hasAuthToken: true,
+			hasCt0: true,
+			authFile: "/tmp/auth.json",
+		});
+
+		const contracts: Record<string, unknown> = {};
+		const capture = async (name: string, action: () => Promise<void>) => {
+			const before = jsonSpy.mock.calls.length;
+			await action();
+			contracts[name] = jsonSpy.mock.calls[before]?.[0];
+		};
+
+		await capture("read", () => handlers.read("10", { json: true }));
+		await capture("replies", () => handlers.replies("10", { json: true }));
+		await capture("thread", () => handlers.thread("10", { json: true }));
+		await capture("search", () => handlers.search("query", { json: true }));
+		await capture("mentions", () => handlers.mentions({ json: true }));
+		await capture("userTweets", () =>
+			handlers.userTweets("@user", { json: true }),
+		);
+		await capture("home", () => handlers.home({ json: true }));
+		await capture("bookmarks", () => handlers.bookmarks({ json: true }));
+		await capture("likes", () => handlers.likes({ json: true }));
+		await capture("listTimeline", () =>
+			handlers.listTimeline("23", { json: true }),
+		);
+		await capture("following", () => handlers.following({ json: true }));
+		await capture("followers", () => handlers.followers({ json: true }));
+		await capture("lists", () => handlers.lists({ json: true }));
+		await capture("news", () => handlers.news({ json: true }));
+		await capture("about", () => handlers.about("@about", { json: true }));
+		await capture("whoami", () => handlers.whoami({ json: true }));
+		await capture("queryIds", () => handlers.queryIds({ json: true }));
+		await capture("refresh", () => handlers.refresh({ json: true }));
+
+		expect(contracts).toMatchSnapshot();
+	});
+
 	it("emits bird-compatible tweet aliases in json mode", async () => {
 		const handlers = createHandlers({ client, output });
 		await handlers.search("hello", { json: true });

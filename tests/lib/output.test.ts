@@ -106,6 +106,11 @@ describe("output", () => {
 			joined: "2020",
 			website: "https://example.com",
 			verified: true,
+			accountBasedIn: "United States",
+			source: "profile-ui",
+			createdCountryAccurate: true,
+			locationAccurate: false,
+			learnMoreUrl: "https://help.x.com",
 		});
 
 		out.news({
@@ -133,6 +138,22 @@ describe("output", () => {
 		expect(logSpy).toHaveBeenCalledWith("Alice");
 		expect(logSpy).toHaveBeenCalledWith("Headline [news]");
 		expect(logSpy).toHaveBeenCalledWith("Query IDs Compatibility");
+	});
+
+	it("prints empty news collections", () => {
+		const out = new Output({ plain: true, color: false, emoji: false });
+		out.news({ items: [], pagesFetched: 1 });
+
+		expect(logSpy).toHaveBeenCalledWith("No news items found.");
+	});
+
+	it("supports colored mode and emoji mutation output", () => {
+		const out = new Output({ plain: false, color: true, emoji: true });
+		out.mutation({ ok: true, message: "ok" });
+		out.mutation({ ok: false, message: "nope" });
+
+		expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("ok"));
+		expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("nope"));
 	});
 
 	it("prints json payloads", () => {

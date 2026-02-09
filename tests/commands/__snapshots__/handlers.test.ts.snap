@@ -1,0 +1,319 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`command handlers > captures compat-json contracts for read/list handlers 1`] = `
+{
+  "about": {
+    "handle": "about_user",
+    "name": "About User",
+  },
+  "bookmarks": {
+    "nextCursor": "bookmarks-cursor",
+    "tweets": [
+      {
+        "author": {
+          "name": "Bookmark",
+          "username": "bookmark",
+        },
+        "authorId": undefined,
+        "conversationId": "17",
+        "createdAt": undefined,
+        "id": "17",
+        "inReplyToStatusId": undefined,
+        "likeCount": undefined,
+        "quotedTweet": undefined,
+        "replyCount": undefined,
+        "retweetCount": undefined,
+        "text": "bookmark 1",
+      },
+    ],
+  },
+  "followers": {
+    "nextCursor": "followers-cursor",
+    "users": [
+      {
+        "createdAt": undefined,
+        "description": "Follower bio",
+        "followersCount": undefined,
+        "followingCount": undefined,
+        "id": "22",
+        "isBlueVerified": undefined,
+        "name": "Follower User",
+        "profileImageUrl": undefined,
+        "username": "follower_user",
+      },
+    ],
+  },
+  "following": {
+    "nextCursor": "following-cursor",
+    "users": [
+      {
+        "createdAt": undefined,
+        "description": "Following bio",
+        "followersCount": undefined,
+        "followingCount": undefined,
+        "id": "21",
+        "isBlueVerified": undefined,
+        "name": "Following User",
+        "profileImageUrl": undefined,
+        "username": "following_user",
+      },
+    ],
+  },
+  "home": {
+    "nextCursor": "home-cursor",
+    "tweets": [
+      {
+        "author": {
+          "name": "Home",
+          "username": "home",
+        },
+        "authorId": undefined,
+        "conversationId": "16",
+        "createdAt": undefined,
+        "id": "16",
+        "inReplyToStatusId": undefined,
+        "likeCount": undefined,
+        "quotedTweet": undefined,
+        "replyCount": undefined,
+        "retweetCount": undefined,
+        "text": "home tweet 1",
+      },
+    ],
+  },
+  "likes": {
+    "nextCursor": "likes-cursor",
+    "tweets": [
+      {
+        "author": {
+          "name": "Liked",
+          "username": "liked",
+        },
+        "authorId": undefined,
+        "conversationId": "18",
+        "createdAt": undefined,
+        "id": "18",
+        "inReplyToStatusId": undefined,
+        "likeCount": undefined,
+        "quotedTweet": undefined,
+        "replyCount": undefined,
+        "retweetCount": undefined,
+        "text": "liked 1",
+      },
+    ],
+  },
+  "listTimeline": {
+    "nextCursor": "list-timeline-cursor",
+    "tweets": [
+      {
+        "author": {
+          "name": "List",
+          "username": "list",
+        },
+        "authorId": undefined,
+        "conversationId": "19",
+        "createdAt": undefined,
+        "id": "19",
+        "inReplyToStatusId": undefined,
+        "likeCount": undefined,
+        "quotedTweet": undefined,
+        "replyCount": undefined,
+        "retweetCount": undefined,
+        "text": "list timeline 1",
+      },
+    ],
+  },
+  "lists": {
+    "items": [
+      {
+        "description": "List Description",
+        "id": "23",
+        "name": "List Name",
+        "url": "https://x.com/i/lists/23",
+      },
+    ],
+    "lists": [
+      {
+        "description": "List Description",
+        "id": "23",
+        "name": "List Name",
+        "url": "https://x.com/i/lists/23",
+      },
+    ],
+    "nextCursor": "lists-cursor",
+    "pagesFetched": 1,
+  },
+  "mentions": {
+    "nextCursor": "mentions-cursor",
+    "tweets": [
+      {
+        "author": {
+          "name": "Mention",
+          "username": "mention",
+        },
+        "authorId": undefined,
+        "conversationId": "14",
+        "createdAt": undefined,
+        "id": "14",
+        "inReplyToStatusId": undefined,
+        "likeCount": undefined,
+        "quotedTweet": undefined,
+        "replyCount": undefined,
+        "retweetCount": undefined,
+        "text": "mention 1",
+      },
+    ],
+  },
+  "news": {
+    "items": [
+      {
+        "headline": "Headline",
+        "id": "24",
+        "sourceTab": "news",
+        "summary": "summary",
+      },
+    ],
+    "news": [
+      {
+        "headline": "Headline",
+        "id": "24",
+        "sourceTab": "news",
+        "summary": "summary",
+      },
+    ],
+    "nextCursor": "news-cursor",
+    "pagesFetched": 1,
+  },
+  "queryIds": {
+    "mode": "playwright",
+    "note": "compat",
+    "refreshed": true,
+    "timestamp": "2026-02-09T00:00:00.000Z",
+  },
+  "read": {
+    "author": {
+      "name": "Reader",
+      "username": "reader",
+    },
+    "authorId": undefined,
+    "conversationId": "10",
+    "createdAt": undefined,
+    "id": "10",
+    "inReplyToStatusId": undefined,
+    "likeCount": undefined,
+    "quotedTweet": {
+      "author": {
+        "name": "Quoted",
+        "username": "quoted",
+      },
+      "authorId": undefined,
+      "conversationId": "9",
+      "createdAt": undefined,
+      "id": "9",
+      "inReplyToStatusId": undefined,
+      "likeCount": undefined,
+      "quotedTweet": undefined,
+      "replyCount": undefined,
+      "retweetCount": undefined,
+      "text": "quoted",
+    },
+    "replyCount": undefined,
+    "retweetCount": undefined,
+    "text": "read tweet",
+  },
+  "refresh": {
+    "authFile": "/tmp/auth.json",
+    "hasAuthToken": true,
+    "hasCt0": true,
+    "loggedIn": true,
+    "source": "browser",
+  },
+  "replies": {
+    "nextCursor": "replies-cursor",
+    "tweets": [
+      {
+        "author": {
+          "name": "Reply",
+          "username": "reply",
+        },
+        "authorId": undefined,
+        "conversationId": "11",
+        "createdAt": undefined,
+        "id": "11",
+        "inReplyToStatusId": undefined,
+        "likeCount": undefined,
+        "quotedTweet": undefined,
+        "replyCount": undefined,
+        "retweetCount": undefined,
+        "text": "reply 1",
+      },
+    ],
+  },
+  "search": {
+    "nextCursor": "search-cursor",
+    "tweets": [
+      {
+        "author": {
+          "name": "Search",
+          "username": "search",
+        },
+        "authorId": undefined,
+        "conversationId": "13",
+        "createdAt": undefined,
+        "id": "13",
+        "inReplyToStatusId": undefined,
+        "likeCount": undefined,
+        "quotedTweet": undefined,
+        "replyCount": undefined,
+        "retweetCount": undefined,
+        "text": "search 1",
+      },
+    ],
+  },
+  "thread": {
+    "nextCursor": "thread-cursor",
+    "tweets": [
+      {
+        "author": {
+          "name": "Thread",
+          "username": "thread",
+        },
+        "authorId": undefined,
+        "conversationId": "12",
+        "createdAt": undefined,
+        "id": "12",
+        "inReplyToStatusId": undefined,
+        "likeCount": undefined,
+        "quotedTweet": undefined,
+        "replyCount": undefined,
+        "retweetCount": undefined,
+        "text": "thread 1",
+      },
+    ],
+  },
+  "userTweets": {
+    "nextCursor": "user-cursor",
+    "tweets": [
+      {
+        "author": {
+          "name": "User",
+          "username": "user",
+        },
+        "authorId": undefined,
+        "conversationId": "15",
+        "createdAt": undefined,
+        "id": "15",
+        "inReplyToStatusId": undefined,
+        "likeCount": undefined,
+        "quotedTweet": undefined,
+        "replyCount": undefined,
+        "retweetCount": undefined,
+        "text": "user tweet 1",
+      },
+    ],
+  },
+  "whoami": {
+    "handle": "whoami_user",
+    "name": "Whoami User",
+  },
+}
+`;
