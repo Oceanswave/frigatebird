@@ -1,128 +1,131 @@
 #!/usr/bin/env node
-import { Command } from 'commander';
-import {
-  whoami,
-  readTweet,
-  searchTweets,
-  listTimeline,
-  postTweet,
-  thread,
-  replies,
-  mentions,
-  userTweets,
-  home,
-  bookmarks,
-  follow,
-  unfollow,
-  lists,
-  reply,
-  like,
-  retweet,
-} from './commands.js';
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { Command } from "commander";
+import { createProgram, registerGlobalOptions } from "./cli/program.js";
+import { PlaywrightXClient } from "./client/playwright-client.js";
+import { createHandlers } from "./commands/handlers.js";
+import { loadConfig, resolveEnvConfig } from "./lib/config.js";
+import { normalizeInvocation } from "./lib/invocation.js";
+import { parseGlobalOptions } from "./lib/options.js";
+import { Output } from "./lib/output.js";
 
-const program = new Command();
+export function readVersion(cwd = process.cwd()): string {
+	try {
+		const packageJsonPath = path.join(cwd, "package.json");
+		const parsed = JSON.parse(fs.readFileSync(packageJsonPath, "utf8")) as {
+			version?: string;
+		};
+		return parsed.version ?? "0.2.0";
+	} catch {
+		return "0.2.0";
+	}
+}
 
-program
-  .name('frigatebird')
-  .description('Playwright-based CLI for X/Twitter')
-  .version('0.1.0');
+function collectExplicitCliBooleans(args: string[]): Record<string, unknown> {
+	const explicit: Record<string, unknown> = {};
+	if (args.includes("--plain")) explicit.plain = true;
+	if (args.includes("--no-color")) explicit.color = false;
+	if (args.includes("--no-emoji")) explicit.emoji = false;
+	if (args.includes("--no-headless")) explicit.headless = false;
+	if (args.includes("--cookie-source")) explicit.cookieSourceExplicit = true;
+	return explicit;
+}
 
-program
-  .command('whoami')
-  .description('Get logged-in user info')
-  .action(whoami);
+function compactObject(
+	input: Record<string, unknown>,
+): Record<string, unknown> {
+	return Object.fromEntries(
+		Object.entries(input).filter(([, value]) => value !== undefined),
+	);
+}
 
-program
-  .command('read')
-  .description('Read a single tweet')
-  .argument('<urlOrId>', 'Tweet URL or ID')
-  .action(readTweet);
+export function parseGlobalCliOptions(
+	args: string[],
+	env: NodeJS.ProcessEnv = process.env,
+	cwd = process.cwd(),
+) {
+	const parser = registerGlobalOptions(new Command());
+	parser.allowUnknownOption(true);
+	parser.parseOptions(args);
+	const cliRaw = parser.opts<Record<string, unknown>>();
+	if (!args.includes("--plain")) cliRaw.plain = undefined;
+	if (!args.includes("--no-color")) cliRaw.color = undefined;
+	if (!args.includes("--no-emoji")) cliRaw.emoji = undefined;
+	if (!args.includes("--no-headless")) cliRaw.headless = undefined;
+	const explicitBooleans = collectExplicitCliBooleans(args);
 
-program
-  .command('search')
-  .description('Search tweets')
-  .argument('<query>', 'Search query')
-  .action(searchTweets);
+	const fileConfig = loadConfig(cwd);
+	const configRaw: Record<string, unknown> = {
+		authToken: fileConfig.authToken,
+		ct0: fileConfig.ct0,
+		baseUrl: fileConfig.baseUrl,
+		cookieSource: fileConfig.cookieSource,
+		chromeProfile: fileConfig.chromeProfile,
+		chromeProfileDir: fileConfig.chromeProfileDir,
+		firefoxProfile: fileConfig.firefoxProfile,
+		cookieTimeout: fileConfig.cookieTimeoutMs,
+		timeout: fileConfig.timeoutMs,
+		quoteDepth: fileConfig.quoteDepth,
+	};
 
-program
-  .command('list-timeline')
-  .description("Read a list's timeline")
-  .argument('<listId>', 'List ID')
-  .action(listTimeline);
+	const mergedRaw = {
+		...configRaw,
+		...compactObject(resolveEnvConfig(env)),
+		...compactObject(cliRaw),
+		...explicitBooleans,
+	};
 
-program
-  .command('post')
-  .description('Post a tweet')
-  .argument('<text>', 'Tweet text')
-  .action(postTweet);
+	const options = parseGlobalOptions(mergedRaw);
 
-program
-  .command('thread')
-  .description('Read a tweet thread/conversation')
-  .argument('<urlOrId>', 'Tweet URL or ID')
-  .action(thread);
+	if (options.plain) {
+		options.color = false;
+		options.emoji = false;
+	}
 
-program
-  .command('replies')
-  .description('Get replies to a tweet')
-  .argument('<urlOrId>', 'Tweet URL or ID')
-  .action(replies);
+	return options;
+}
 
-program
-  .command('mentions')
-  .description('Get your mentions')
-  .action(mentions);
+export async function runCli(rawArgs = process.argv.slice(2)): Promise<void> {
+	const args = rawArgs[0] === "--" ? rawArgs.slice(1) : rawArgs;
+	const normalizedArgs = normalizeInvocation(args);
+	const globalOptions = parseGlobalCliOptions(normalizedArgs);
 
-program
-  .command('user-tweets')
-  .description("Get a user's tweets")
-  .argument('<handle>', 'Username (with or without @)')
-  .action(userTweets);
+	const output = new Output({
+		plain: globalOptions.plain,
+		color: globalOptions.color,
+		emoji: globalOptions.emoji,
+	});
 
-program
-  .command('home')
-  .description('Read your home timeline')
-  .action(home);
+	const client = new PlaywrightXClient(globalOptions);
+	const handlers = createHandlers({ client, output });
+	const program = createProgram(handlers, readVersion());
 
-program
-  .command('bookmarks')
-  .description('Get your bookmarks')
-  .action(bookmarks);
+	program.parse(["node", "frigatebird", ...normalizedArgs]);
+}
 
-program
-  .command('follow')
-  .description('Follow a user')
-  .argument('<handle>', 'Username (with or without @)')
-  .action(follow);
+export function isDirectExecution(
+	moduleUrl: string,
+	argvPath = process.argv[1],
+): boolean {
+	if (!argvPath) return false;
 
-program
-  .command('unfollow')
-  .description('Unfollow a user')
-  .argument('<handle>', 'Username (with or without @)')
-  .action(unfollow);
+	try {
+		const invokedPath = fs.realpathSync(argvPath);
+		const modulePath = fs.realpathSync(fileURLToPath(moduleUrl));
+		return invokedPath === modulePath;
+	} catch {
+		return false;
+	}
+}
 
-program
-  .command('lists')
-  .description('Get your lists')
-  .action(lists);
-
-program
-  .command('reply')
-  .description('Reply to a tweet')
-  .argument('<urlOrId>', 'Tweet URL or ID')
-  .argument('<text>', 'Reply text')
-  .action(reply);
-
-program
-  .command('like')
-  .description('Like a tweet')
-  .argument('<urlOrId>', 'Tweet URL or ID')
-  .action(like);
-
-program
-  .command('retweet')
-  .description('Retweet/repost a tweet')
-  .argument('<urlOrId>', 'Tweet URL or ID')
-  .action(retweet);
-
-program.parse();
+if (process.argv[1]) {
+	if (isDirectExecution(import.meta.url, process.argv[1])) {
+		runCli().catch((error) => {
+			const message = error instanceof Error ? error.message : String(error);
+			console.error(message);
+			process.exitCode = 1;
+		});
+	}
+}

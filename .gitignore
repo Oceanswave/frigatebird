@@ -1,5 +1,6 @@
 node_modules/
 dist/
+coverage/
 auth.json
 *.log
 .DS_Store
