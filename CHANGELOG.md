@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.2 - 2026-02-09
+
+### Added
+- Full `--compat-json` contract snapshots for read/list handlers to lock bird-compatible JSON shapes.
+- Scheduled live e2e workflow support (weekly cron), guarded behind opt-in repository variable `FRIGATEBIRD_ENABLE_SCHEDULED_LIVE_E2E`.
+- New CLI runtime test coverage for `runCli` path construction and handler wiring.
+
+### Changed
+- Coverage baseline raised from ~84% to ~94% statements/lines with expanded Playwright client, handler, and output tests.
+- Coverage thresholds now enforce stronger gates in `vitest.config.ts` (`lines/statements >= 90`, `branches >= 80`, `functions >= 90`).
+- Live e2e list target is now passed to tests as an explicit `--list-name` argument instead of using `FRIGATEBIRD_LIVE_LIST_NAME`.
+- Live e2e workflow now supports premium-feature toggling via `premium_features_e2e` input and article-specific dispatch inputs.
+
+### Fixed
+- Added regression coverage for list-membership dialog fallbacks, bookmark edge paths, and unbookmark error capture.
+
 ## 0.3.1 - 2026-02-09
 
 ### Added

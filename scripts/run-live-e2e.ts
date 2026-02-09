@@ -126,6 +126,9 @@ function run(): void {
 		"vitest.e2e.config.ts",
 		"tests/e2e/live-mutation-account.e2e.test.ts",
 		...parsed.passThrough,
+		"--",
+		"--list-name",
+		parsed.listName,
 	];
 
 	const child = spawn(vitestBin, vitestArgs, {
@@ -133,7 +136,6 @@ function run(): void {
 		env: {
 			...process.env,
 			FRIGATEBIRD_LIVE_E2E: "1",
-			FRIGATEBIRD_LIVE_LIST_NAME: parsed.listName,
 			...(parsed.cookieSource
 				? { FRIGATEBIRD_LIVE_COOKIE_SOURCE: parsed.cookieSource }
 				: {}),

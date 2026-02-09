@@ -13,6 +13,25 @@ const ROOT = path.resolve(
 );
 const TSX_BIN = path.resolve(ROOT, "node_modules/.bin/tsx");
 
+function readArgValue(name: string): string | undefined {
+	const args = process.argv.slice(2);
+	for (let index = 0; index < args.length; index += 1) {
+		const arg = args[index];
+		if (!arg) continue;
+
+		if (arg === name) {
+			const value = args[index + 1];
+			if (!value || value.startsWith("--")) return undefined;
+			return value;
+		}
+
+		if (arg.startsWith(`${name}=`)) {
+			return arg.slice(name.length + 1);
+		}
+	}
+	return undefined;
+}
+
 const LIVE_ENABLED = process.env.FRIGATEBIRD_LIVE_E2E === "1";
 const COOKIE_SOURCE = process.env.FRIGATEBIRD_LIVE_COOKIE_SOURCE ?? "safari";
 const ARTICLE_COOKIE_SOURCE =
@@ -32,7 +51,7 @@ const ENABLE_PREMIUM_FEATURES_E2E =
 	process.env.FRIGATEBIRD_LIVE_ENABLE_PREMIUM_FEATURES_E2E === "1";
 const TARGET_HANDLE =
 	process.env.FRIGATEBIRD_LIVE_TARGET_HANDLE ?? "Oceanswave";
-const LIST_NAME = process.env.FRIGATEBIRD_LIVE_LIST_NAME?.trim();
+const LIST_NAME = readArgValue("--list-name")?.trim();
 
 interface CliResult {
 	stdout: string;

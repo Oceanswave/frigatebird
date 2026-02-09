@@ -226,7 +226,10 @@ Live mutation e2e requirements:
 
 - CI: `.github/workflows/ci.yml`
 - npm publish: `.github/workflows/release.yml` (triggered by GitHub Release `published`, trusted publishing/OIDC)
-- live mutation CI: `.github/workflows/live-e2e.yml` (manual trigger; accepts `list_name` workflow input + validates auth secrets before running)
+- live mutation CI: `.github/workflows/live-e2e.yml`
+  - manual trigger: `workflow_dispatch` (`list_name`, `cookie_source`, `premium_features_e2e`, article inputs)
+  - scheduled trigger: weekly cron, opt-in with repo variable `FRIGATEBIRD_ENABLE_SCHEDULED_LIVE_E2E=1`
+  - scheduled config variables: `FRIGATEBIRD_LIVE_E2E_LIST_NAME`, `FRIGATEBIRD_LIVE_E2E_COOKIE_SOURCE`, `FRIGATEBIRD_LIVE_E2E_PREMIUM`, and optional article/guard prefix vars
 - PR auto-merge: `.github/workflows/auto-merge.yml` (uses `pull_request_target`; enables squash auto-merge for non-draft same-repo PRs)
 - release checklist: `RELEASE.md`
 
