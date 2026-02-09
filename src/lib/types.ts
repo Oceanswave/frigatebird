@@ -12,6 +12,7 @@ export interface GlobalOptions {
 	cookieSourceExplicit?: boolean;
 	timeout?: number;
 	quoteDepth?: number;
+	compatJson?: boolean;
 	plain?: boolean;
 	emoji?: boolean;
 	color?: boolean;
@@ -35,6 +36,17 @@ export interface Tweet {
 	createdAt?: string;
 	authorName?: string;
 	authorHandle?: string;
+	author?: {
+		username?: string;
+		name?: string;
+	};
+	authorId?: string;
+	replyCount?: number;
+	retweetCount?: number;
+	likeCount?: number;
+	conversationId?: string;
+	inReplyToStatusId?: string;
+	quotedTweet?: Tweet;
 	isThread?: boolean;
 	threadPosition?: number;
 	isBookmarkedTweet?: boolean;
@@ -79,7 +91,14 @@ export interface UserSummary {
 	id?: string;
 	name?: string;
 	handle?: string;
+	username?: string;
 	bio?: string;
+	description?: string;
+	followersCount?: number;
+	followingCount?: number;
+	isBlueVerified?: boolean;
+	profileImageUrl?: string;
+	createdAt?: string;
 	url?: string;
 }
 

@@ -78,11 +78,10 @@ export class Output {
 		for (const tweet of result.items) {
 			const headerParts: string[] = [];
 			if (tweet.createdAt) headerParts.push(tweet.createdAt);
-			if (tweet.authorName || tweet.authorHandle) {
-				const identity = [
-					tweet.authorName,
-					tweet.authorHandle ? `(@${tweet.authorHandle})` : "",
-				]
+			const authorName = tweet.authorName ?? tweet.author?.name;
+			const authorHandle = tweet.authorHandle ?? tweet.author?.username;
+			if (authorName || authorHandle) {
+				const identity = [authorName, authorHandle ? `(@${authorHandle})` : ""]
 					.filter(Boolean)
 					.join(" ");
 				headerParts.push(identity.trim());

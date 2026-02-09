@@ -13,10 +13,12 @@ describe("cli entry helpers", () => {
 	it("parses plain output settings", () => {
 		const options = parseGlobalCliOptions([
 			"--plain",
+			"--compat-json",
 			"--cookie-source",
 			"firefox",
 		]);
 		expect(options.plain).toBe(true);
+		expect(options.compatJson).toBe(true);
 		expect(options.color).toBe(false);
 		expect(options.emoji).toBe(false);
 		expect(options.cookieSource).toEqual(["firefox"]);

@@ -126,6 +126,117 @@ describe("command handlers", () => {
 		expect(output.json).toHaveBeenCalled();
 	});
 
+	it("emits strict bird tweet payload in compat-json mode", async () => {
+		(client.search as ReturnType<typeof vi.fn>).mockResolvedValue({
+			items: [
+				{
+					id: "1",
+					text: "hello",
+					url: "https://x.com/i/web/status/1",
+					authorName: "Alice",
+					authorHandle: "alice",
+					conversationId: "1",
+					replyCount: 2,
+					retweetCount: 3,
+					likeCount: 5,
+				},
+			],
+			nextCursor: "cursor-2",
+			pagesFetched: 1,
+		});
+		const handlers = createHandlers({
+			client,
+			output,
+			compatJson: true,
+			quoteDepth: 1,
+		});
+		await handlers.search("hello", { json: true });
+
+		expect(output.json).toHaveBeenCalledWith({
+			tweets: [
+				{
+					id: "1",
+					text: "hello",
+					author: {
+						username: "alice",
+						name: "Alice",
+					},
+					createdAt: undefined,
+					authorId: undefined,
+					replyCount: 2,
+					retweetCount: 3,
+					likeCount: 5,
+					conversationId: "1",
+					inReplyToStatusId: undefined,
+					quotedTweet: undefined,
+				},
+			],
+			nextCursor: "cursor-2",
+		});
+	});
+
+	it("emits strict bird user payload in compat-json mode", async () => {
+		(client.following as ReturnType<typeof vi.fn>).mockResolvedValue({
+			items: [
+				{
+					id: "42",
+					handle: "alice",
+					name: "Alice",
+					bio: "Bio",
+				},
+			],
+			nextCursor: "cursor-2",
+			pagesFetched: 1,
+		});
+		const handlers = createHandlers({
+			client,
+			output,
+			compatJson: true,
+		});
+		await handlers.following({ json: true });
+
+		expect(output.json).toHaveBeenCalledWith({
+			users: [
+				{
+					id: "42",
+					username: "alice",
+					name: "Alice",
+					description: "Bio",
+					followersCount: undefined,
+					followingCount: undefined,
+					isBlueVerified: undefined,
+					profileImageUrl: undefined,
+					createdAt: undefined,
+				},
+			],
+			nextCursor: "cursor-2",
+		});
+	});
+
+	it("emits bird-compatible tweet aliases in json mode", async () => {
+		const handlers = createHandlers({ client, output });
+		await handlers.search("hello", { json: true });
+
+		expect(output.json).toHaveBeenCalledWith(
+			expect.objectContaining({
+				items: [],
+				tweets: [],
+			}),
+		);
+	});
+
+	it("emits bird-compatible user aliases in json mode", async () => {
+		const handlers = createHandlers({ client, output });
+		await handlers.following({ json: true });
+
+		expect(output.json).toHaveBeenCalledWith(
+			expect.objectContaining({
+				items: [],
+				users: [],
+			}),
+		);
+	});
+
 	it("parses search count option", async () => {
 		const handlers = createHandlers({ client, output });
 		await handlers.search("hello", { count: "7" });
