@@ -1,6 +1,9 @@
 # frigatebird 🐦 — resilient X CLI for posting, articles, replies, reading, and list automation
 
-![Frigatebird logo](images/frigatebird_logo.jpeg)
+<div style="text-align: center;">
+  <img src="images/frigatebird_logo.jpg" alt="Frigatebird logo" />
+</div>
+
 
 `frigatebird` is a Playwright-first X CLI that preserves the familiar `bird` command-line experience while running on browser automation instead of private GraphQL internals.
 
@@ -198,21 +201,21 @@ npm run lint
 npm run test:run        # unit/integration
 npm run test:coverage   # unit/integration + coverage
 npm run test:e2e        # e2e only
-npm run test:e2e:live   # opt-in live mutation e2e (requires env vars below)
+npm run test:e2e:live -- --list-name testlist001   # opt-in live mutation e2e
 npm run smoke:pack-install
 ```
 
-Live mutation e2e env requirements:
+Live mutation e2e requirements:
+- required argument: `--list-name <your-list-name>`
 - `FRIGATEBIRD_AUTH_TOKEN`
 - `FRIGATEBIRD_CT0`
-- `FRIGATEBIRD_LIVE_LIST_NAME`
 - optional: `FRIGATEBIRD_LIVE_COOKIE_SOURCE`, `FRIGATEBIRD_LIVE_EXPECTED_HANDLE_PREFIX`, `FRIGATEBIRD_LIVE_TARGET_HANDLE`
 
 ## Release
 
 - CI: `.github/workflows/ci.yml`
 - npm publish: `.github/workflows/release.yml` (triggered by GitHub Release `published`, trusted publishing/OIDC)
-- live mutation CI: `.github/workflows/live-e2e.yml` (manual trigger; validates `FRIGATEBIRD_LIVE_LIST_NAME` + auth secrets before running)
+- live mutation CI: `.github/workflows/live-e2e.yml` (manual trigger; validates list name repo var + auth secrets before running)
 - release checklist: `RELEASE.md`
 
 ## Notes

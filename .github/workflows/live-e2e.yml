@@ -18,7 +18,7 @@ jobs:
       FRIGATEBIRD_LIVE_COOKIE_SOURCE: ${{ vars.FRIGATEBIRD_LIVE_COOKIE_SOURCE || 'chrome' }}
       FRIGATEBIRD_LIVE_EXPECTED_HANDLE_PREFIX: ${{ vars.FRIGATEBIRD_LIVE_EXPECTED_HANDLE_PREFIX || 'frigatebird_' }}
       FRIGATEBIRD_LIVE_TARGET_HANDLE: ${{ vars.FRIGATEBIRD_LIVE_TARGET_HANDLE || 'Oceanswave' }}
-      FRIGATEBIRD_LIVE_LIST_NAME: ${{ vars.FRIGATEBIRD_LIVE_LIST_NAME }}
+      LIVE_LIST_NAME: ${{ vars.FRIGATEBIRD_LIVE_LIST_NAME }}
       FRIGATEBIRD_AUTH_TOKEN: ${{ secrets.FRIGATEBIRD_AUTH_TOKEN }}
       FRIGATEBIRD_CT0: ${{ secrets.FRIGATEBIRD_CT0 }}
       NO_COLOR: "1"
@@ -28,9 +28,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Validate live mutation inputs
@@ -47,7 +47,7 @@ jobs:
             missing=1
           fi
 
-          if [ -z "$FRIGATEBIRD_LIVE_LIST_NAME" ]; then
+          if [ -z "$LIVE_LIST_NAME" ]; then
             echo "Missing required repository variable: FRIGATEBIRD_LIVE_LIST_NAME"
             missing=1
           fi
@@ -63,4 +63,4 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run live mutation e2e
-        run: npm run test:e2e:live
+        run: npm run test:e2e:live -- --list-name "$LIVE_LIST_NAME"

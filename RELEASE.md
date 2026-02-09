@@ -22,8 +22,9 @@ Frigatebird is the continuity CLI for the deprecated `bird` project: it preserve
 6. Optional pre-release e2e run:
    - `npm run test:e2e`
 7. Optional pre-release live mutation e2e:
-   - required env: `FRIGATEBIRD_AUTH_TOKEN`, `FRIGATEBIRD_CT0`, `FRIGATEBIRD_LIVE_LIST_NAME`
-   - command: `npm run test:e2e:live`
+   - required argument: `--list-name <your-list-name>`
+   - required env: `FRIGATEBIRD_AUTH_TOKEN`, `FRIGATEBIRD_CT0`
+   - command: `npm run test:e2e:live -- --list-name testlist001`
 
 ## GitHub Workflows
 

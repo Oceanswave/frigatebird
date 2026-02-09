@@ -12,7 +12,7 @@
 - Mutation `retweet` flow now uses bounded resilient click handling and explicit completion checks.
 - Read-only fixture e2e was optimized to run significantly faster while preserving command coverage.
 - CI and release verification workflows now include fixture e2e smoke runs.
-- Live mutation e2e now requires `FRIGATEBIRD_LIVE_LIST_NAME` and always validates list `add/remove/batch` paths.
+- Live mutation e2e now requires a `--list-name` argument and always validates list `add/remove/batch` paths.
 
 ### Tests
 - Expanded unit coverage for session identity parsing and retweet mutation branches.

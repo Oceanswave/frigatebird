@@ -15,6 +15,12 @@ const TSX_BIN = path.resolve(ROOT, "node_modules/.bin/tsx");
 
 const LIVE_ENABLED = process.env.FRIGATEBIRD_LIVE_E2E === "1";
 const COOKIE_SOURCE = process.env.FRIGATEBIRD_LIVE_COOKIE_SOURCE ?? "safari";
+const COOKIE_TIMEOUT_MS =
+	process.env.FRIGATEBIRD_LIVE_COOKIE_TIMEOUT_MS ?? "15000";
+const CLI_TIMEOUT_MS = Number.parseInt(
+	process.env.FRIGATEBIRD_LIVE_COMMAND_TIMEOUT_MS ?? "90000",
+	10,
+);
 const EXPECTED_PREFIX =
 	process.env.FRIGATEBIRD_LIVE_EXPECTED_HANDLE_PREFIX ?? "frigatebird_";
 const TARGET_HANDLE =
@@ -53,11 +59,22 @@ async function runCli(args: string[]): Promise<CliResult> {
 	try {
 		const { stdout, stderr } = await execFileAsync(
 			TSX_BIN,
-			["src/cli.ts", "--cookie-source", COOKIE_SOURCE, "--plain", ...args],
+			[
+				"src/cli.ts",
+				"--cookie-source",
+				COOKIE_SOURCE,
+				"--cookie-timeout",
+				COOKIE_TIMEOUT_MS,
+				"--plain",
+				...args,
+			],
 			{
 				cwd: ROOT,
 				env,
 				maxBuffer: 1024 * 1024 * 4,
+				timeout: Number.isFinite(CLI_TIMEOUT_MS)
+					? Math.max(5000, CLI_TIMEOUT_MS)
+					: 90000,
 			},
 		);
 		return { stdout, stderr, code: 0 };
@@ -162,7 +179,7 @@ describe("live mutation e2e (opt-in)", () => {
 
 		if (!LIST_NAME) {
 			throw new Error(
-				"FRIGATEBIRD_LIVE_LIST_NAME must be set when running live e2e so list add/remove/batch mutations are always validated.",
+				"Live list name is required. Run `npm run test:e2e:live -- --list-name <your-list>` so list add/remove/batch mutations can be validated.",
 			);
 		}
 
@@ -249,6 +266,23 @@ describe("live mutation e2e (opt-in)", () => {
 		expectCliOk(retweet, retweetArgs);
 		expect(retweet.stdout).toMatch(/reposted|already reposted/i);
 
+		const unbookmarkArgs = [
+			"unbookmark",
+			postedTweet?.url ?? postedTweet?.id ?? "",
+			"--json",
+		];
+		const unbookmark = await runCliWithRetries(unbookmarkArgs);
+		expectCliOk(unbookmark, unbookmarkArgs);
+		const unbookmarkJson = parseJson<{
+			errors: number;
+			removed: number;
+			already: number;
+		}>(unbookmark.stdout);
+		expect(unbookmarkJson.errors).toBe(0);
+		expect(
+			unbookmarkJson.removed + unbookmarkJson.already,
+		).toBeGreaterThanOrEqual(1);
+
 		const postTag = `frigatebird-live-post-${Date.now()}`;
 		const postArgs = ["post", `Live alias post (${postTag})`];
 		const post = await runCliWithRetries(postArgs);
@@ -321,5 +355,5 @@ describe("live mutation e2e (opt-in)", () => {
 		const batchJson = parseJson<{ errors: number }>(batch.stdout);
 		expect(batchJson.errors).toBe(0);
 		fs.unlinkSync(batchFile);
-	}, 180000);
+	}, 300000);
 });

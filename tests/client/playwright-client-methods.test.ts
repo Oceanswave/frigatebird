@@ -84,6 +84,41 @@ describe("PlaywrightXClient methods", () => {
 		expect(result.ok).toBe(true);
 	});
 
+	it("falls back to home composer when compose route selector lookup fails", async () => {
+		const client: any = new PlaywrightXClient(options, sessionStub() as any);
+		client.withPage = vi.fn(async (task: any) => task(pageStub()));
+		client.ensureAuth = vi.fn(async () => {});
+		client.waitForComposer = vi
+			.fn()
+			.mockRejectedValueOnce(
+				new Error(
+					"Composer text area not found. X may have changed selectors.",
+				),
+			)
+			.mockResolvedValueOnce(undefined);
+		client.recoverComposerFromHome = vi.fn(async () => true);
+
+		const result = await client.tweet("hello");
+		expect(result.ok).toBe(true);
+		expect(client.recoverComposerFromHome).toHaveBeenCalled();
+	});
+
+	it("returns failure when composer cannot be recovered", async () => {
+		const client: any = new PlaywrightXClient(options, sessionStub() as any);
+		client.withPage = vi.fn(async (task: any) => task(pageStub()));
+		client.ensureAuth = vi.fn(async () => {});
+		client.waitForComposer = vi.fn(async () => {
+			throw new Error(
+				"Composer text area not found. X may have changed selectors.",
+			);
+		});
+		client.recoverComposerFromHome = vi.fn(async () => false);
+
+		await expect(client.tweet("hello")).rejects.toThrow(
+			"Composer text area not found",
+		);
+	});
+
 	it("publishes an article with title and body", async () => {
 		const client: any = new PlaywrightXClient(options, sessionStub() as any);
 		const goto = vi.fn(async () => {});
@@ -550,6 +585,57 @@ describe("PlaywrightXClient methods", () => {
 
 		expect(viaUser.items.length).toBe(1);
 		expect(viaNotifications.items.length).toBe(0);
+	});
+
+	it("returns no-op when follow target is already followed", async () => {
+		const client: any = new PlaywrightXClient(options, sessionStub() as any);
+		const page = pageStub({
+			goto: async () => {},
+			locator: (selector: string) => {
+				if (selector.includes("-unfollow")) {
+					return locatorStub({
+						first: () =>
+							locatorStub({
+								isVisible: async () => true,
+							}),
+					});
+				}
+				return locatorStub({
+					first: () =>
+						locatorStub({
+							isVisible: async () => false,
+						}),
+				});
+			},
+		});
+
+		client.withPage = vi.fn(async (task: any) => task(page));
+		client.ensureAuth = vi.fn(async () => {});
+
+		const result = await client.follow("@a");
+		expect(result.ok).toBe(true);
+		expect(result.message).toContain("Already following");
+	});
+
+	it("returns failure when follow button is unavailable", async () => {
+		const client: any = new PlaywrightXClient(options, sessionStub() as any);
+		const page = pageStub({
+			goto: async () => {},
+			locator: () =>
+				locatorStub({
+					first: () =>
+						locatorStub({
+							isVisible: async () => false,
+						}),
+				}),
+		});
+		client.withPage = vi.fn(async (task: any) => task(page));
+		client.ensureAuth = vi.fn(async () => {});
+		client.clickFirstVisible = vi.fn(async () => false);
+
+		const result = await client.follow("@a");
+		expect(result.ok).toBe(false);
+		expect(result.message).toContain("Follow button not found");
 	});
 
 	it("handles follow and unfollow actions", async () => {

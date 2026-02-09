@@ -1,0 +1,1456 @@
+{
+	"globalOptions": [
+		{
+			"flags": "-V, --version",
+			"long": "--version",
+			"short": "-V",
+			"required": false,
+			"optional": false,
+			"negate": false
+		},
+		{
+			"flags": "--auth-token <token>",
+			"long": "--auth-token",
+			"short": null,
+			"required": true,
+			"optional": false,
+			"negate": false
+		},
+		{
+			"flags": "--ct0 <token>",
+			"long": "--ct0",
+			"short": null,
+			"required": true,
+			"optional": false,
+			"negate": false
+		},
+		{
+			"flags": "--base-url <url>",
+			"long": "--base-url",
+			"short": null,
+			"required": true,
+			"optional": false,
+			"negate": false
+		},
+		{
+			"flags": "--chrome-profile <name>",
+			"long": "--chrome-profile",
+			"short": null,
+			"required": true,
+			"optional": false,
+			"negate": false
+		},
+		{
+			"flags": "--chrome-profile-dir <path>",
+			"long": "--chrome-profile-dir",
+			"short": null,
+			"required": true,
+			"optional": false,
+			"negate": false
+		},
+		{
+			"flags": "--firefox-profile <name>",
+			"long": "--firefox-profile",
+			"short": null,
+			"required": true,
+			"optional": false,
+			"negate": false
+		},
+		{
+			"flags": "--cookie-timeout <ms>",
+			"long": "--cookie-timeout",
+			"short": null,
+			"required": true,
+			"optional": false,
+			"negate": false
+		},
+		{
+			"flags": "--cookie-source <source>",
+			"long": "--cookie-source",
+			"short": null,
+			"required": true,
+			"optional": false,
+			"negate": false
+		},
+		{
+			"flags": "--media <path>",
+			"long": "--media",
+			"short": null,
+			"required": true,
+			"optional": false,
+			"negate": false
+		},
+		{
+			"flags": "--alt <text>",
+			"long": "--alt",
+			"short": null,
+			"required": true,
+			"optional": false,
+			"negate": false
+		},
+		{
+			"flags": "--timeout <ms>",
+			"long": "--timeout",
+			"short": null,
+			"required": true,
+			"optional": false,
+			"negate": false
+		},
+		{
+			"flags": "--quote-depth <n>",
+			"long": "--quote-depth",
+			"short": null,
+			"required": true,
+			"optional": false,
+			"negate": false
+		},
+		{
+			"flags": "--plain",
+			"long": "--plain",
+			"short": null,
+			"required": false,
+			"optional": false,
+			"negate": false
+		},
+		{
+			"flags": "--no-emoji",
+			"long": "--no-emoji",
+			"short": null,
+			"required": false,
+			"optional": false,
+			"negate": true
+		},
+		{
+			"flags": "--no-color",
+			"long": "--no-color",
+			"short": null,
+			"required": false,
+			"optional": false,
+			"negate": true
+		},
+		{
+			"flags": "--no-headless",
+			"long": "--no-headless",
+			"short": null,
+			"required": false,
+			"optional": false,
+			"negate": true
+		}
+	],
+	"commands": [
+		{
+			"name": "about",
+			"aliases": [],
+			"args": [
+				{
+					"name": "username",
+					"required": true,
+					"variadic": false
+				}
+			],
+			"options": [
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "add",
+			"aliases": [],
+			"args": [
+				{
+					"name": "listName",
+					"required": true,
+					"variadic": false
+				},
+				{
+					"name": "handles",
+					"required": true,
+					"variadic": true
+				}
+			],
+			"options": [
+				{
+					"flags": "--no-headless",
+					"long": "--no-headless",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": true
+				},
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "article",
+			"aliases": [],
+			"args": [
+				{
+					"name": "title",
+					"required": true,
+					"variadic": false
+				},
+				{
+					"name": "body",
+					"required": false,
+					"variadic": false
+				}
+			],
+			"options": [
+				{
+					"flags": "--body-file <path>",
+					"long": "--body-file",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "batch",
+			"aliases": [],
+			"args": [
+				{
+					"name": "file",
+					"required": true,
+					"variadic": false
+				}
+			],
+			"options": [
+				{
+					"flags": "--no-headless",
+					"long": "--no-headless",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": true
+				},
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "bookmarks",
+			"aliases": [],
+			"args": [],
+			"options": [
+				{
+					"flags": "-n, --count <number>",
+					"long": "--count",
+					"short": "-n",
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--folder-id <id>",
+					"long": "--folder-id",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--all",
+					"long": "--all",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--max-pages <number>",
+					"long": "--max-pages",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--cursor <string>",
+					"long": "--cursor",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--expand-root-only",
+					"long": "--expand-root-only",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--author-chain",
+					"long": "--author-chain",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--author-only",
+					"long": "--author-only",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--full-chain-only",
+					"long": "--full-chain-only",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--include-ancestor-branches",
+					"long": "--include-ancestor-branches",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--include-parent",
+					"long": "--include-parent",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--thread-meta",
+					"long": "--thread-meta",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--sort-chronological",
+					"long": "--sort-chronological",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--delay <ms>",
+					"long": "--delay",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json-full",
+					"long": "--json-full",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "check",
+			"aliases": [],
+			"args": [],
+			"options": []
+		},
+		{
+			"name": "follow",
+			"aliases": [],
+			"args": [
+				{
+					"name": "username-or-id",
+					"required": true,
+					"variadic": false
+				}
+			],
+			"options": []
+		},
+		{
+			"name": "followers",
+			"aliases": [],
+			"args": [],
+			"options": [
+				{
+					"flags": "--user <userId>",
+					"long": "--user",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "-n, --count <number>",
+					"long": "--count",
+					"short": "-n",
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--cursor <string>",
+					"long": "--cursor",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--all",
+					"long": "--all",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--max-pages <number>",
+					"long": "--max-pages",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--delay <ms>",
+					"long": "--delay",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json-full",
+					"long": "--json-full",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "following",
+			"aliases": [],
+			"args": [],
+			"options": [
+				{
+					"flags": "--user <userId>",
+					"long": "--user",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "-n, --count <number>",
+					"long": "--count",
+					"short": "-n",
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--cursor <string>",
+					"long": "--cursor",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--all",
+					"long": "--all",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--max-pages <number>",
+					"long": "--max-pages",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--delay <ms>",
+					"long": "--delay",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json-full",
+					"long": "--json-full",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "help",
+			"aliases": [],
+			"args": [
+				{
+					"name": "command",
+					"required": false,
+					"variadic": false
+				}
+			],
+			"options": []
+		},
+		{
+			"name": "home",
+			"aliases": [],
+			"args": [],
+			"options": [
+				{
+					"flags": "-n, --count <number>",
+					"long": "--count",
+					"short": "-n",
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--following",
+					"long": "--following",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--all",
+					"long": "--all",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--max-pages <number>",
+					"long": "--max-pages",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--delay <ms>",
+					"long": "--delay",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json-full",
+					"long": "--json-full",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "like",
+			"aliases": [],
+			"args": [
+				{
+					"name": "tweet-id-or-url",
+					"required": true,
+					"variadic": false
+				}
+			],
+			"options": []
+		},
+		{
+			"name": "likes",
+			"aliases": [],
+			"args": [],
+			"options": [
+				{
+					"flags": "-n, --count <number>",
+					"long": "--count",
+					"short": "-n",
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--all",
+					"long": "--all",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--max-pages <number>",
+					"long": "--max-pages",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--cursor <string>",
+					"long": "--cursor",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--delay <ms>",
+					"long": "--delay",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json-full",
+					"long": "--json-full",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "list",
+			"aliases": [],
+			"args": [],
+			"options": [
+				{
+					"flags": "--member-of",
+					"long": "--member-of",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "-n, --count <number>",
+					"long": "--count",
+					"short": "-n",
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json-full",
+					"long": "--json-full",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "list-timeline",
+			"aliases": [],
+			"args": [
+				{
+					"name": "list-id-or-url",
+					"required": true,
+					"variadic": false
+				}
+			],
+			"options": [
+				{
+					"flags": "-n, --count <number>",
+					"long": "--count",
+					"short": "-n",
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--all",
+					"long": "--all",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--max-pages <number>",
+					"long": "--max-pages",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--cursor <string>",
+					"long": "--cursor",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--delay <ms>",
+					"long": "--delay",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json-full",
+					"long": "--json-full",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "lists",
+			"aliases": [],
+			"args": [],
+			"options": [
+				{
+					"flags": "--member-of",
+					"long": "--member-of",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "-n, --count <number>",
+					"long": "--count",
+					"short": "-n",
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json-full",
+					"long": "--json-full",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "mentions",
+			"aliases": [],
+			"args": [],
+			"options": [
+				{
+					"flags": "-u, --user <handle>",
+					"long": "--user",
+					"short": "-u",
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "-n, --count <number>",
+					"long": "--count",
+					"short": "-n",
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json-full",
+					"long": "--json-full",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "news",
+			"aliases": ["trending"],
+			"args": [],
+			"options": [
+				{
+					"flags": "-n, --count <number>",
+					"long": "--count",
+					"short": "-n",
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--ai-only",
+					"long": "--ai-only",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--with-tweets",
+					"long": "--with-tweets",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--tweets-per-item <number>",
+					"long": "--tweets-per-item",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--for-you",
+					"long": "--for-you",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--news-only",
+					"long": "--news-only",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--sports",
+					"long": "--sports",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--entertainment",
+					"long": "--entertainment",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--trending-only",
+					"long": "--trending-only",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json-full",
+					"long": "--json-full",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "post",
+			"aliases": [],
+			"args": [
+				{
+					"name": "text",
+					"required": true,
+					"variadic": false
+				}
+			],
+			"options": []
+		},
+		{
+			"name": "query-ids",
+			"aliases": [],
+			"args": [],
+			"options": [
+				{
+					"flags": "--fresh",
+					"long": "--fresh",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "read",
+			"aliases": [],
+			"args": [
+				{
+					"name": "tweet-id-or-url",
+					"required": true,
+					"variadic": false
+				}
+			],
+			"options": [
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json-full",
+					"long": "--json-full",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "refresh",
+			"aliases": [],
+			"args": [],
+			"options": [
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "remove",
+			"aliases": [],
+			"args": [
+				{
+					"name": "handle",
+					"required": true,
+					"variadic": false
+				},
+				{
+					"name": "listName",
+					"required": true,
+					"variadic": false
+				}
+			],
+			"options": [
+				{
+					"flags": "--no-headless",
+					"long": "--no-headless",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": true
+				},
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "replies",
+			"aliases": [],
+			"args": [
+				{
+					"name": "tweet-id-or-url",
+					"required": true,
+					"variadic": false
+				}
+			],
+			"options": [
+				{
+					"flags": "--all",
+					"long": "--all",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--max-pages <number>",
+					"long": "--max-pages",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--delay <ms>",
+					"long": "--delay",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--cursor <string>",
+					"long": "--cursor",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "-n, --count <number>",
+					"long": "--count",
+					"short": "-n",
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json-full",
+					"long": "--json-full",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "reply",
+			"aliases": [],
+			"args": [
+				{
+					"name": "tweet-id-or-url",
+					"required": true,
+					"variadic": false
+				},
+				{
+					"name": "text",
+					"required": true,
+					"variadic": false
+				}
+			],
+			"options": []
+		},
+		{
+			"name": "retweet",
+			"aliases": [],
+			"args": [
+				{
+					"name": "tweet-id-or-url",
+					"required": true,
+					"variadic": false
+				}
+			],
+			"options": []
+		},
+		{
+			"name": "search",
+			"aliases": [],
+			"args": [
+				{
+					"name": "query",
+					"required": true,
+					"variadic": false
+				}
+			],
+			"options": [
+				{
+					"flags": "-n, --count <number>",
+					"long": "--count",
+					"short": "-n",
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--all",
+					"long": "--all",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--max-pages <number>",
+					"long": "--max-pages",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--cursor <string>",
+					"long": "--cursor",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--delay <ms>",
+					"long": "--delay",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json-full",
+					"long": "--json-full",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "thread",
+			"aliases": [],
+			"args": [
+				{
+					"name": "tweet-id-or-url",
+					"required": true,
+					"variadic": false
+				}
+			],
+			"options": [
+				{
+					"flags": "--all",
+					"long": "--all",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--max-pages <number>",
+					"long": "--max-pages",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--delay <ms>",
+					"long": "--delay",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--cursor <string>",
+					"long": "--cursor",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "-n, --count <number>",
+					"long": "--count",
+					"short": "-n",
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json-full",
+					"long": "--json-full",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "tweet",
+			"aliases": [],
+			"args": [
+				{
+					"name": "text",
+					"required": true,
+					"variadic": false
+				}
+			],
+			"options": []
+		},
+		{
+			"name": "unbookmark",
+			"aliases": [],
+			"args": [
+				{
+					"name": "tweet-id-or-url",
+					"required": true,
+					"variadic": true
+				}
+			],
+			"options": [
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "unfollow",
+			"aliases": [],
+			"args": [
+				{
+					"name": "username-or-id",
+					"required": true,
+					"variadic": false
+				}
+			],
+			"options": []
+		},
+		{
+			"name": "user-tweets",
+			"aliases": [],
+			"args": [
+				{
+					"name": "handle",
+					"required": true,
+					"variadic": false
+				}
+			],
+			"options": [
+				{
+					"flags": "-n, --count <number>",
+					"long": "--count",
+					"short": "-n",
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--max-pages <number>",
+					"long": "--max-pages",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--all",
+					"long": "--all",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--delay <ms>",
+					"long": "--delay",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--cursor <string>",
+					"long": "--cursor",
+					"short": null,
+					"required": true,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				},
+				{
+					"flags": "--json-full",
+					"long": "--json-full",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		},
+		{
+			"name": "whoami",
+			"aliases": [],
+			"args": [],
+			"options": [
+				{
+					"flags": "--json",
+					"long": "--json",
+					"short": null,
+					"required": false,
+					"optional": false,
+					"negate": false
+				}
+			]
+		}
+	]
+}

@@ -453,6 +453,33 @@ export class PlaywrightXClient implements FrigatebirdClient {
 		}
 	}
 
+	private async recoverComposerFromHome(
+		page: Page,
+		timeoutMs = 12000,
+	): Promise<boolean> {
+		await page.goto(this.absolute("/home"), {
+			waitUntil: "domcontentloaded",
+		});
+		await this.dismissBlockingLayers(page);
+
+		const composeSelectors = [
+			'[data-testid="SideNav_NewTweet_Button"]',
+			'[data-testid="FloatingActionButton_Tweet"]',
+			'a[href="/compose/post"]',
+			'[role="button"][aria-label*="Post"]',
+		];
+		await this.clickFirstVisible(page, composeSelectors, 4000).catch(
+			() => false,
+		);
+
+		try {
+			await this.waitForComposer(page, timeoutMs);
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
 	private async fillComposer(page: Page, text: string): Promise<void> {
 		const composerSelectors = [
 			'[data-testid="tweetTextarea_0"]',
@@ -973,7 +1000,20 @@ export class PlaywrightXClient implements FrigatebirdClient {
 				await page.goto(this.absolute("/compose/post"), {
 					waitUntil: "domcontentloaded",
 				});
-				await this.waitForComposer(page, 12000);
+				await this.dismissBlockingLayers(page);
+				let composerReady = true;
+				try {
+					await this.waitForComposer(page, 12000);
+				} catch {
+					composerReady = await this.recoverComposerFromHome(page, 12000);
+				}
+
+				if (!composerReady) {
+					throw new Error(
+						"Composer text area not found. X may have changed selectors.",
+					);
+				}
+
 				await this.fillComposer(page, text);
 				await this.attachMedia(page, mediaSpecs);
 				await this.submitComposer(page, "tweet");
