@@ -1,0 +1,39 @@
+name: Enable PR Auto-Merge
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+
+concurrency:
+  group: auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  enable:
+    name: Enable Auto-Merge
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.draft == false }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Enable auto-merge (squash)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          auto_enabled="$(gh pr view "$PR_NUMBER" --repo "$REPO" --json autoMergeRequest --jq '.autoMergeRequest != null')"
+          if [ "$auto_enabled" = "true" ]; then
+            echo "Auto-merge already enabled for PR #$PR_NUMBER"
+            exit 0
+          fi
+
+          gh pr merge "$PR_NUMBER" --repo "$REPO" --auto --squash --delete-branch

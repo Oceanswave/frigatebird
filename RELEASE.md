@@ -41,6 +41,9 @@ Frigatebird is the continuity CLI for the deprecated `bird` project: it preserve
   - Runs on `workflow_dispatch`.
   - Requires `list_name` workflow input and secrets `FRIGATEBIRD_AUTH_TOKEN` + `FRIGATEBIRD_CT0`.
   - Runs full live mutation coverage, including list add/remove/batch mutations.
+- Auto-merge workflow: `/Users/oceanswave/Projects/frigatebird/.github/workflows/auto-merge.yml`
+  - Runs on `pull_request_target`.
+  - Enables squash auto-merge for eligible non-draft PRs from branches in this repository.
 
 ## Packaging Checks
 

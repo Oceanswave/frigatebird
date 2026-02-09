@@ -219,6 +219,7 @@ Live mutation e2e requirements:
 - CI: `.github/workflows/ci.yml`
 - npm publish: `.github/workflows/release.yml` (triggered by GitHub Release `published`, trusted publishing/OIDC)
 - live mutation CI: `.github/workflows/live-e2e.yml` (manual trigger; accepts `list_name` workflow input + validates auth secrets before running)
+- PR auto-merge: `.github/workflows/auto-merge.yml` (uses `pull_request_target`; enables squash auto-merge for non-draft same-repo PRs)
 - release checklist: `RELEASE.md`
 
 ## Notes
