@@ -201,7 +201,7 @@ npm run lint
 npm run test:run        # unit/integration
 npm run test:coverage   # unit/integration + coverage
 npm run test:e2e        # e2e only
-npm run test:e2e:live -- --list-name testlist001   # opt-in live mutation e2e
+npm run test:e2e:live -- --list-name testlist001   # opt-in live mutation e2e (article mutation disabled by default)
 npm run smoke:pack-install
 ```
 
@@ -209,13 +209,16 @@ Live mutation e2e requirements:
 - required argument: `--list-name <your-list-name>`
 - `FRIGATEBIRD_AUTH_TOKEN`
 - `FRIGATEBIRD_CT0`
-- optional: `FRIGATEBIRD_LIVE_COOKIE_SOURCE`, `FRIGATEBIRD_LIVE_EXPECTED_HANDLE_PREFIX`, `FRIGATEBIRD_LIVE_TARGET_HANDLE`
+- optional args: `--cookie-source <source>`
+- optional env: `FRIGATEBIRD_LIVE_COOKIE_SOURCE`, `FRIGATEBIRD_LIVE_EXPECTED_HANDLE_PREFIX`, `FRIGATEBIRD_LIVE_TARGET_HANDLE`
+- article mutation is disabled by default; enable manually with:
+  - `--enable-premium-features-e2e --article-cookie-source chrome --article-expected-handle-prefix Oceanswave`
 
 ## Release
 
 - CI: `.github/workflows/ci.yml`
 - npm publish: `.github/workflows/release.yml` (triggered by GitHub Release `published`, trusted publishing/OIDC)
-- live mutation CI: `.github/workflows/live-e2e.yml` (manual trigger; validates list name repo var + auth secrets before running)
+- live mutation CI: `.github/workflows/live-e2e.yml` (manual trigger; accepts `list_name` workflow input + validates auth secrets before running)
 - release checklist: `RELEASE.md`
 
 ## Notes

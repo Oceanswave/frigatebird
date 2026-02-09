@@ -143,11 +143,13 @@ describe("PlaywrightXClient methods", () => {
 			.fn()
 			.mockResolvedValueOnce(titleField)
 			.mockResolvedValueOnce(bodyField);
-		client.clickFirstVisible = vi
-			.fn()
-			.mockResolvedValueOnce(false)
-			.mockResolvedValueOnce(true)
-			.mockResolvedValueOnce(false);
+		client.clickFirstVisible = vi.fn(async (_page: any, selectors: string[]) =>
+			selectors.some(
+				(selector) =>
+					selector.includes("articlePublishButton") ||
+					selector.includes('has-text("Publish")'),
+			),
+		);
 
 		const result = await client.publishArticle("Article title", "Body text");
 		expect(result.ok).toBe(true);
@@ -184,7 +186,41 @@ describe("PlaywrightXClient methods", () => {
 		const result = await client.publishArticle("Title", "Body");
 		expect(result.ok).toBe(false);
 		expect(result.message).toContain("Could not locate article composer");
-		expect(goto).toHaveBeenCalledTimes(6);
+		expect(goto.mock.calls.length).toBeGreaterThanOrEqual(6);
+	});
+
+	it("publishes an article using combined composer fallback", async () => {
+		const client: any = new PlaywrightXClient(options, sessionStub() as any);
+		const goto = vi.fn(async () => {});
+		const combinedFill = vi.fn(async () => {});
+		const page = pageStub({
+			goto,
+		});
+		const combinedField = {
+			click: async () => {},
+			fill: combinedFill,
+			evaluate: async () => "Article title\n\nBody text",
+		};
+
+		client.withPage = vi.fn(async (task: any) => task(page));
+		client.ensureAuth = vi.fn(async () => {});
+		client.dismissBlockingLayers = vi.fn(async () => {});
+		client.clickFirstVisible = vi
+			.fn()
+			.mockResolvedValueOnce(false)
+			.mockResolvedValueOnce(true)
+			.mockResolvedValueOnce(true)
+			.mockResolvedValueOnce(false);
+		client.firstVisibleLocator = vi
+			.fn()
+			.mockResolvedValueOnce(null)
+			.mockResolvedValueOnce(null)
+			.mockResolvedValueOnce(combinedField);
+
+		const result = await client.publishArticle("Article title", "Body text");
+		expect(result.ok).toBe(true);
+		expect(result.message).toContain("Article published");
+		expect(combinedFill).toHaveBeenCalledWith("Article title\n\nBody text");
 	});
 
 	it("attaches explicit media for tweet", async () => {

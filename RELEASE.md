@@ -23,8 +23,11 @@ Frigatebird is the continuity CLI for the deprecated `bird` project: it preserve
    - `npm run test:e2e`
 7. Optional pre-release live mutation e2e:
    - required argument: `--list-name <your-list-name>`
+   - optional args: `--cookie-source <source>`
    - required env: `FRIGATEBIRD_AUTH_TOKEN`, `FRIGATEBIRD_CT0`
    - command: `npm run test:e2e:live -- --list-name testlist001`
+   - note: article mutation is disabled by default; opt-in only:
+     - `npm run test:e2e:live -- --list-name testlist001 --enable-premium-features-e2e --article-cookie-source chrome --article-expected-handle-prefix Oceanswave`
 
 ## GitHub Workflows
 
@@ -36,7 +39,7 @@ Frigatebird is the continuity CLI for the deprecated `bird` project: it preserve
   - Verifies tag/version/package name alignment, runs release gate + fixture e2e smoke, and publishes to npm via trusted publishing (OIDC).
 - Live e2e workflow: `/Users/oceanswave/Projects/frigatebird/.github/workflows/live-e2e.yml`
   - Runs on `workflow_dispatch`.
-  - Requires repository variable `FRIGATEBIRD_LIVE_LIST_NAME` and secrets `FRIGATEBIRD_AUTH_TOKEN` + `FRIGATEBIRD_CT0`.
+  - Requires `list_name` workflow input and secrets `FRIGATEBIRD_AUTH_TOKEN` + `FRIGATEBIRD_CT0`.
   - Runs full live mutation coverage, including list add/remove/batch mutations.
 
 ## Packaging Checks

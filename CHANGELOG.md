@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.3.1 - 2026-02-09
+
+### Added
+- Premium-feature live e2e opt-in flag: `--enable-premium-features-e2e`.
+- Live e2e support for dedicated premium account cookies via `--article-cookie-source`.
+- Coverage thresholds in `vitest.config.ts` to enforce release quality gates.
+
+### Changed
+- Live mutation CI now accepts `workflow_dispatch` input `list_name` instead of a repository variable.
+- Premium feature mutation coverage (article publish path) is disabled by default and only runs when explicitly enabled.
+- Article publish automation was updated for current X compose flows (`/compose/articles`, `Write`, and modern composer/title selectors).
+- Live e2e naming now reflects premium-feature scope instead of article-specific semantics.
+
+### Tests
+- Added/updated Playwright client tests for modern article composer fallback behavior.
+- Verified full release gate (`lint`, `build`, `coverage`) and fixture e2e pass on 0.3.1 candidate.
+
 ## 0.3.0 - 2026-02-09
 
 ### Added

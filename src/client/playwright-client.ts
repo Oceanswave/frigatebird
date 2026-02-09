@@ -1038,6 +1038,7 @@ export class PlaywrightXClient implements FrigatebirdClient {
 			await this.ensureAuth(page);
 
 			const composePaths = [
+				"/compose/articles",
 				"/i/articles/new",
 				"/compose/article",
 				"/write",
@@ -1052,20 +1053,37 @@ export class PlaywrightXClient implements FrigatebirdClient {
 				'[role="textbox"][aria-label*="Title"]',
 				'input[placeholder*="Title"]',
 				'textarea[placeholder*="Title"]',
+				'input[placeholder*="title" i]',
+				'textarea[placeholder*="title" i]',
+				'textarea[placeholder*="Add a title"]',
 				'[contenteditable="true"][aria-label*="Title"]',
 			];
 			const bodySelectors = [
 				'[data-testid="articleBodyInput"]',
 				'[data-testid="article-editor"] [contenteditable="true"]',
+				'[data-testid="composer"][role="textbox"]',
+				'[data-testid="composer"]',
 				'.ProseMirror[contenteditable="true"]',
 				'[role="textbox"][aria-label*="Write"]',
 				'[contenteditable="true"][aria-label*="Write"]',
 				'[role="textbox"][aria-label*="Body"]',
 				'textarea[placeholder*="Write"]',
 			];
+			const combinedComposerSelectors = [
+				'[data-testid="composer"][role="textbox"]',
+				'[data-testid="composer"]',
+				'[contenteditable="true"][data-testid="composer"]',
+			];
+			const writeSelectors = [
+				'[data-testid="empty_state_button_text"]:has-text("Write")',
+				'[role="button"]:has-text("Write")',
+				'[role="link"]:has-text("Write")',
+				'[role="button"]:has-text("New article")',
+			];
 
 			let titleField: Locator | null = null;
 			let bodyField: Locator | null = null;
+			let combinedComposer: Locator | null = null;
 
 			for (const path of composePaths) {
 				await page
@@ -1080,9 +1098,15 @@ export class PlaywrightXClient implements FrigatebirdClient {
 						'[role="button"]:has-text("Write article")',
 						'[data-testid="articleComposerButton"]',
 						'a[href*="/i/articles/new"]',
+						'a[href*="/compose/articles"]',
+						'[role="link"]:has-text("Articles")',
 					],
 					1500,
 				).catch(() => false);
+
+				await this.clickFirstVisible(page, writeSelectors, 1500).catch(
+					() => false,
+				);
 
 				titleField = await this.firstVisibleLocator(
 					page,
@@ -1096,30 +1120,65 @@ export class PlaywrightXClient implements FrigatebirdClient {
 					3500,
 					120,
 				);
-				if (titleField && bodyField) {
+				combinedComposer = await this.firstVisibleLocator(
+					page,
+					combinedComposerSelectors,
+					2500,
+					120,
+				);
+
+				if ((titleField && bodyField) || combinedComposer) {
 					break;
 				}
 			}
 
 			if (!titleField || !bodyField) {
-				return fail(
-					"Could not locate article composer. Articles may be unavailable for this account or X changed selectors.",
-				);
+				if (combinedComposer) {
+					await combinedComposer.click().catch(() => {});
+					await combinedComposer.fill(`${cleanTitle}\n\n${cleanBody}`);
+
+					const inserted = await combinedComposer
+						.evaluate((node) => {
+							const element = node as HTMLElement & { value?: string };
+							return (
+								element.innerText ||
+								element.textContent ||
+								element.value ||
+								""
+							).trim();
+						})
+						.catch(() => "");
+
+					if (
+						inserted.length < Math.min(8, cleanTitle.length) ||
+						!inserted
+							.toLowerCase()
+							.includes(cleanBody.slice(0, 8).toLowerCase())
+					) {
+						await page.keyboard
+							.type(`${cleanTitle}\n\n${cleanBody}`)
+							.catch(() => {});
+					}
+				} else {
+					return fail(
+						"Could not locate article composer. Articles may be unavailable for this account or X changed selectors.",
+					);
+				}
+			} else {
+				await titleField.click().catch(() => {});
+				await titleField.fill(cleanTitle);
+
+				await bodyField.click().catch(() => {});
+				await bodyField.fill(cleanBody);
 			}
-
-			await titleField.click().catch(() => {});
-			await titleField.fill(cleanTitle);
-
-			await bodyField.click().catch(() => {});
-			await bodyField.fill(cleanBody);
 
 			const published = await this.clickFirstVisible(
 				page,
 				[
 					'[data-testid="articlePublishButton"]:not([aria-disabled="true"])',
 					'[data-testid="publishButton"]:not([aria-disabled="true"])',
-					'[role="button"]:has-text("Publish"):not([aria-disabled="true"])',
-					'[role="button"]:has-text("Post"):not([aria-disabled="true"])',
+					'[role="button"]:has-text("Publish"):not([aria-disabled="true"]):not([disabled])',
+					'[role="button"]:has-text("Post"):not([aria-disabled="true"]):not([disabled])',
 				],
 				12000,
 			).catch(() => false);
