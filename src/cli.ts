@@ -99,7 +99,12 @@ export async function runCli(rawArgs = process.argv.slice(2)): Promise<void> {
 	});
 
 	const client = new PlaywrightXClient(globalOptions);
-	const handlers = createHandlers({ client, output });
+	const handlers = createHandlers({
+		client,
+		output,
+		compatJson: globalOptions.compatJson,
+		quoteDepth: globalOptions.quoteDepth,
+	});
 	const program = createProgram(handlers, readVersion());
 
 	program.parse(["node", "frigatebird", ...normalizedArgs]);

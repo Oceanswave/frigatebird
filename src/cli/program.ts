@@ -40,6 +40,7 @@ export function registerGlobalOptions(program: Command): Command {
 		)
 		.option("--timeout <ms>", "Operation timeout in milliseconds")
 		.option("--quote-depth <n>", "Quoted tweet depth (compatibility option)")
+		.option("--compat-json", "Emit bird-compatible JSON output schema")
 		.option("--plain", "Plain output (no emoji or color)")
 		.option("--no-emoji", "Disable emoji output")
 		.option("--no-color", "Disable ANSI colors")

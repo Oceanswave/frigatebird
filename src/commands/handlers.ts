@@ -31,21 +31,111 @@ function parseRawArgs(options: unknown): Record<string, unknown> {
 export interface HandlerDeps {
 	client: FrigatebirdClient;
 	output: Output;
+	compatJson?: boolean;
+	quoteDepth?: number;
+}
+
+interface BirdTweet {
+	id: string;
+	text: string;
+	author?: {
+		username?: string;
+		name?: string;
+	};
+	authorId?: string;
+	createdAt?: string;
+	replyCount?: number;
+	retweetCount?: number;
+	likeCount?: number;
+	conversationId?: string;
+	inReplyToStatusId?: string;
+	quotedTweet?: BirdTweet;
+}
+
+function toBirdTweet(tweet: Tweet, quoteDepth = 1): BirdTweet {
+	const author = {
+		username: tweet.author?.username ?? tweet.authorHandle,
+		name: tweet.author?.name ?? tweet.authorName,
+	};
+	const nextQuoteDepth = Math.max(0, quoteDepth - 1);
+	const hasAuthor = Boolean(author.username || author.name);
+
+	return {
+		id: tweet.id,
+		text: tweet.text,
+		author: hasAuthor ? author : undefined,
+		authorId: tweet.authorId,
+		createdAt: tweet.createdAt,
+		replyCount: tweet.replyCount,
+		retweetCount: tweet.retweetCount,
+		likeCount: tweet.likeCount,
+		conversationId: tweet.conversationId ?? tweet.id,
+		inReplyToStatusId: tweet.inReplyToStatusId,
+		quotedTweet:
+			quoteDepth > 0 && tweet.quotedTweet
+				? toBirdTweet(tweet.quotedTweet, nextQuoteDepth)
+				: undefined,
+	};
+}
+
+function toBirdUser(user: UserSummary): Record<string, unknown> {
+	return {
+		id: user.id,
+		username: user.username ?? user.handle,
+		name: user.name,
+		description: user.description ?? user.bio,
+		followersCount: user.followersCount,
+		followingCount: user.followingCount,
+		isBlueVerified: user.isBlueVerified,
+		profileImageUrl: user.profileImageUrl,
+		createdAt: user.createdAt,
+	};
 }
 
 function printTweetCollection(
 	result: CollectionResult<Tweet>,
 	json: JsonOutputOptions,
 	output: Output,
+	options: {
+		compatJson?: boolean;
+		quoteDepth?: number;
+	},
 ): void {
 	if (json.json) {
+		if (options.compatJson) {
+			const tweets = result.items.map((item) =>
+				toBirdTweet(item, options.quoteDepth ?? 1),
+			);
+			output.json(
+				json.jsonFull
+					? {
+							tweets,
+							nextCursor: result.nextCursor ?? null,
+							pagesFetched: result.pagesFetched,
+							warnings: result.warnings,
+							raw: result.raw,
+						}
+					: {
+							tweets,
+							nextCursor: result.nextCursor ?? null,
+						},
+			);
+			return;
+		}
+
+		const compatibility = {
+			tweets: result.items,
+			nextCursor: result.nextCursor,
+		};
 		output.json(
 			json.jsonFull
 				? {
 						...result,
+						...compatibility,
 					}
 				: {
 						items: result.items,
+						...compatibility,
 						nextCursor: result.nextCursor,
 						pagesFetched: result.pagesFetched,
 						warnings: result.warnings,
@@ -67,13 +157,42 @@ function printUserCollection(
 	result: CollectionResult<UserSummary>,
 	json: JsonOutputOptions,
 	output: Output,
+	options: {
+		compatJson?: boolean;
+	},
 ): void {
 	if (json.json) {
+		if (options.compatJson) {
+			const users = result.items.map((item) => toBirdUser(item));
+			output.json(
+				json.jsonFull
+					? {
+							users,
+							nextCursor: result.nextCursor ?? null,
+							pagesFetched: result.pagesFetched,
+							raw: result.raw,
+						}
+					: {
+							users,
+							nextCursor: result.nextCursor ?? null,
+						},
+			);
+			return;
+		}
+
+		const compatibility = {
+			users: result.items,
+			nextCursor: result.nextCursor,
+		};
 		output.json(
 			json.jsonFull
-				? result
+				? {
+						...result,
+						...compatibility,
+					}
 				: {
 						items: result.items,
+						...compatibility,
 						nextCursor: result.nextCursor,
 						pagesFetched: result.pagesFetched,
 					},
@@ -90,10 +209,21 @@ function printListCollection(
 	output: Output,
 ): void {
 	if (json.json) {
+		const compatibility = {
+			lists: result.items,
+			nextCursor: result.nextCursor,
+		};
 		output.json(
 			json.jsonFull
-				? result
-				: { items: result.items, pagesFetched: result.pagesFetched },
+				? {
+						...result,
+						...compatibility,
+					}
+				: {
+						items: result.items,
+						...compatibility,
+						pagesFetched: result.pagesFetched,
+					},
 		);
 		return;
 	}
@@ -107,10 +237,21 @@ function printNewsCollection(
 	output: Output,
 ): void {
 	if (json.json) {
+		const compatibility = {
+			news: result.items,
+			nextCursor: result.nextCursor,
+		};
 		output.json(
 			json.jsonFull
-				? result
-				: { items: result.items, pagesFetched: result.pagesFetched },
+				? {
+						...result,
+						...compatibility,
+					}
+				: {
+						items: result.items,
+						...compatibility,
+						pagesFetched: result.pagesFetched,
+					},
 		);
 		return;
 	}
@@ -145,7 +286,17 @@ function printBatchResult(
 	}
 }
 
-export function createHandlers({ client, output }: HandlerDeps) {
+export function createHandlers({
+	client,
+	output,
+	compatJson = false,
+	quoteDepth = 1,
+}: HandlerDeps) {
+	const renderingOptions = {
+		compatJson,
+		quoteDepth: Math.max(0, Math.trunc(quoteDepth)),
+	};
+
 	return {
 		check: async () => {
 			const status = await client.check();
@@ -219,7 +370,11 @@ export function createHandlers({ client, output }: HandlerDeps) {
 			const tweet = await client.read(tweetRef);
 
 			if (json.json) {
-				output.json(tweet);
+				if (compatJson) {
+					output.json(toBirdTweet(tweet, renderingOptions.quoteDepth));
+				} else {
+					output.json(tweet);
+				}
 				return;
 			}
 
@@ -234,7 +389,7 @@ export function createHandlers({ client, output }: HandlerDeps) {
 				delayMs: 1000,
 			});
 			const result = await client.replies(tweetRef, pagination);
-			printTweetCollection(result, json, output);
+			printTweetCollection(result, json, output, renderingOptions);
 		},
 
 		thread: async (tweetRef: string, options: unknown) => {
@@ -245,7 +400,7 @@ export function createHandlers({ client, output }: HandlerDeps) {
 				delayMs: 1000,
 			});
 			const result = await client.thread(tweetRef, pagination);
-			printTweetCollection(result, json, output);
+			printTweetCollection(result, json, output, renderingOptions);
 		},
 
 		search: async (query: string, options: unknown) => {
@@ -256,14 +411,14 @@ export function createHandlers({ client, output }: HandlerDeps) {
 				delayMs: 800,
 			});
 			const result = await client.search(query, pagination);
-			printTweetCollection(result, json, output);
+			printTweetCollection(result, json, output, renderingOptions);
 		},
 
 		mentions: async (options: unknown) => {
 			const raw = parseRawArgs(options);
 			const json = parseJsonFlag(raw);
 			const result = await client.mentions(parseMentionOptions(raw));
-			printTweetCollection(result, json, output);
+			printTweetCollection(result, json, output, renderingOptions);
 		},
 
 		userTweets: async (handle: string, options: unknown) => {
@@ -274,7 +429,7 @@ export function createHandlers({ client, output }: HandlerDeps) {
 				delayMs: 1000,
 			});
 			const result = await client.userTweets(handle, pagination);
-			printTweetCollection(result, json, output);
+			printTweetCollection(result, json, output, renderingOptions);
 		},
 
 		home: async (options: unknown) => {
@@ -285,7 +440,7 @@ export function createHandlers({ client, output }: HandlerDeps) {
 				following: Boolean(raw.following),
 			});
 			const result = await client.home(timeline);
-			printTweetCollection(result, json, output);
+			printTweetCollection(result, json, output, renderingOptions);
 		},
 
 		bookmarks: async (options: unknown) => {
@@ -293,7 +448,7 @@ export function createHandlers({ client, output }: HandlerDeps) {
 			const json = parseJsonFlag(raw);
 			const bookmarkOptions = parseBookmarkOptions(raw);
 			const result = await client.bookmarks(bookmarkOptions);
-			printTweetCollection(result, json, output);
+			printTweetCollection(result, json, output, renderingOptions);
 		},
 
 		unbookmark: async (tweetRefs: string[], options: unknown) => {
@@ -310,7 +465,7 @@ export function createHandlers({ client, output }: HandlerDeps) {
 				delayMs: 1000,
 			});
 			const result = await client.likes(pagination);
-			printTweetCollection(result, json, output);
+			printTweetCollection(result, json, output, renderingOptions);
 		},
 
 		lists: async (options: unknown) => {
@@ -329,7 +484,7 @@ export function createHandlers({ client, output }: HandlerDeps) {
 				delayMs: 800,
 			});
 			const result = await client.listTimeline(listRef, pagination);
-			printTweetCollection(result, json, output);
+			printTweetCollection(result, json, output, renderingOptions);
 		},
 
 		follow: async (user: string) => {
@@ -344,14 +499,14 @@ export function createHandlers({ client, output }: HandlerDeps) {
 			const raw = parseRawArgs(options);
 			const json = parseJsonFlag(raw);
 			const result = await client.following(parseFollowListOptions(raw));
-			printUserCollection(result, json, output);
+			printUserCollection(result, json, output, renderingOptions);
 		},
 
 		followers: async (options: unknown) => {
 			const raw = parseRawArgs(options);
 			const json = parseJsonFlag(raw);
 			const result = await client.followers(parseFollowListOptions(raw));
-			printUserCollection(result, json, output);
+			printUserCollection(result, json, output, renderingOptions);
 		},
 
 		about: async (handle: string, options: unknown) => {

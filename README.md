@@ -119,6 +119,7 @@ frigatebird batch accounts.json
 - `--cookie-timeout <ms>`
 - `--timeout <ms>`
 - `--quote-depth <n>`
+- `--compat-json` (strict bird-style JSON envelopes + field names)
 - `--media <path>` (repeatable)
 - `--alt <text>` (repeatable)
 - `--plain`
@@ -190,6 +191,13 @@ Environment vars:
 - `--json` gives machine-readable output for read/timeline/list commands.
 - `--json-full` includes raw compatibility payloads where available.
 - `--plain` disables emoji + color for stable scripts.
+- `--compat-json` switches JSON output to strict bird-style schemas.
+- Collection commands emit `nextCursor` when additional pages are available; pass it back via `--cursor`.
+- In default JSON mode, collection commands include both canonical `items` and alias keys:
+  - tweets: `tweets`
+  - users: `users`
+  - lists: `lists`
+  - news: `news`
 
 ## Development
 

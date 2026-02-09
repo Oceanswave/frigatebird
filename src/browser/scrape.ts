@@ -1,4 +1,5 @@
 import type { Locator, Page } from "playwright";
+import { decodeOffsetCursor, encodeOffsetCursor } from "../lib/cursor.js";
 import {
 	extractListId,
 	extractTweetId,
@@ -14,6 +15,8 @@ import type {
 } from "../lib/types.js";
 
 async function safeInnerText(locator: Locator): Promise<string> {
+	const count = await locator.count().catch(() => 0);
+	if (count === 0) return "";
 	return locator.innerText().catch(() => "");
 }
 
@@ -21,7 +24,54 @@ async function safeAttribute(
 	locator: Locator,
 	attribute: string,
 ): Promise<string> {
+	const count = await locator.count().catch(() => 0);
+	if (count === 0) return "";
 	return (await locator.getAttribute(attribute).catch(() => null)) ?? "";
+}
+
+function parseMetricNumber(value: string): number | undefined {
+	const normalized = value.replace(/,/g, "").trim();
+	if (!normalized) return undefined;
+
+	const compactMatch = normalized.match(/(\d+(?:\.\d+)?)\s*([KMB])/i);
+	if (compactMatch?.[1]) {
+		const base = Number.parseFloat(compactMatch[1]);
+		if (!Number.isFinite(base)) return undefined;
+		const suffix = compactMatch[2]?.toUpperCase();
+		const multiplier =
+			suffix === "K" ? 1_000 : suffix === "M" ? 1_000_000 : 1_000_000_000;
+		return Math.round(base * multiplier);
+	}
+
+	const integerMatch = normalized.match(/\b(\d+)\b/);
+	if (integerMatch?.[1]) {
+		const parsed = Number.parseInt(integerMatch[1], 10);
+		if (Number.isFinite(parsed)) return parsed;
+	}
+
+	return undefined;
+}
+
+async function extractActionCount(
+	card: Locator,
+	testIds: string[],
+): Promise<number | undefined> {
+	for (const testId of testIds) {
+		const target = card.locator(`[data-testid="${testId}"]`).first();
+		if ((await target.count().catch(() => 0)) === 0) continue;
+		const textCandidates = [
+			await safeAttribute(target, "aria-label"),
+			await safeInnerText(target),
+			await safeInnerText(target.locator("span").first()),
+		];
+
+		for (const candidate of textCandidates) {
+			const parsed = parseMetricNumber(candidate);
+			if (parsed !== undefined) return parsed;
+		}
+	}
+
+	return undefined;
 }
 
 async function extractTweetFromCard(card: Locator): Promise<Tweet | null> {
@@ -52,6 +102,18 @@ async function extractTweetFromCard(card: Locator): Promise<Tweet | null> {
 		card.locator("time").first(),
 		"datetime",
 	);
+	const authorLink = await safeAttribute(
+		card.locator('a[href*="/i/user/"]').first(),
+		"href",
+	);
+	const authorId = authorLink.match(/\/i\/user\/(\d+)/)?.[1];
+	const replyCount = await extractActionCount(card, ["reply"]);
+	const retweetCount = await extractActionCount(card, ["retweet", "unretweet"]);
+	const likeCount = await extractActionCount(card, ["like", "unlike"]);
+	const author =
+		authorName || authorHandle
+			? { name: authorName, username: authorHandle }
+			: undefined;
 
 	return {
 		id,
@@ -60,6 +122,12 @@ async function extractTweetFromCard(card: Locator): Promise<Tweet | null> {
 		createdAt: createdAt || undefined,
 		authorName,
 		authorHandle,
+		author,
+		authorId,
+		replyCount,
+		retweetCount,
+		likeCount,
+		conversationId: id,
 	};
 }
 
@@ -74,6 +142,9 @@ export async function collectTweets(
 	const byId = new Map<string, Tweet>();
 	let pagesFetched = 0;
 	const softPageLimit = options.maxPages ?? (options.all ? 25 : 1);
+	const cursorOffset = options.cursor ? decodeOffsetCursor(options.cursor) : 0;
+	let reachedBottom = false;
+	let windowSatisfied = false;
 
 	while (pagesFetched < softPageLimit) {
 		pagesFetched += 1;
@@ -86,13 +157,14 @@ export async function collectTweets(
 			if (!byId.has(tweet.id)) {
 				byId.set(tweet.id, tweet);
 			}
-			if (!options.all && byId.size >= options.count) {
-				return {
-					items: Array.from(byId.values()).slice(0, options.count),
-					pagesFetched,
-					nextCursor: undefined,
-				};
+			if (!options.all && byId.size >= cursorOffset + options.count) {
+				windowSatisfied = true;
+				break;
 			}
+		}
+
+		if (windowSatisfied) {
+			break;
 		}
 
 		if (options.all) {
@@ -106,6 +178,7 @@ export async function collectTweets(
 			});
 
 			if (atBottom && pagesFetched >= 2) {
+				reachedBottom = true;
 				break;
 			}
 		} else {
@@ -114,10 +187,33 @@ export async function collectTweets(
 	}
 
 	const items = Array.from(byId.values());
+	const returnAllItems = options.all && !options.cursor;
+	const start = Math.max(0, cursorOffset);
+	const end = start + options.count;
+	const windowedItems = returnAllItems ? items : items.slice(start, end);
+	const hasMoreInMemory = start + windowedItems.length < items.length;
+	const hitPageLimit =
+		options.all && !reachedBottom && pagesFetched >= softPageLimit;
+	const hasMorePotential =
+		hasMoreInMemory ||
+		hitPageLimit ||
+		(!options.all && items.length >= start + options.count);
+	const nextCursor =
+		!returnAllItems && hasMorePotential && windowedItems.length > 0
+			? encodeOffsetCursor(start + windowedItems.length)
+			: undefined;
+
 	return {
-		items: options.all ? items : items.slice(0, options.count),
+		items: windowedItems,
 		pagesFetched,
-		nextCursor: undefined,
+		nextCursor,
+		raw: {
+			mode: "playwright-scrape",
+			collected: items.length,
+			offset: start,
+			returnAllItems,
+			hitPageLimit,
+		},
 	};
 }
 
@@ -201,17 +297,22 @@ async function extractUserFromCell(cell: Locator): Promise<UserSummary | null> {
 	const handleLine = lines.find((line) => line.startsWith("@"));
 	const name = lines[0] && lines[0] !== handleLine ? lines[0] : undefined;
 	const handle = handleLine ? normalizeHandle(handleLine) : undefined;
+	const bio =
+		lines
+			.slice(handleLine ? lines.indexOf(handleLine) + 1 : 1)
+			.join(" ")
+			.trim() || undefined;
+	const userId = href.match(/\/i\/user\/(\d+)/)?.[1];
 
 	if (!name && !handle && !href) return null;
 
 	return {
+		id: userId,
 		name,
 		handle,
-		bio:
-			lines
-				.slice(handleLine ? lines.indexOf(handleLine) + 1 : 1)
-				.join(" ")
-				.trim() || undefined,
+		username: handle,
+		bio,
+		description: bio,
 		url: href ? `https://x.com${href}` : undefined,
 	};
 }
@@ -225,6 +326,9 @@ export async function collectUsers(
 	const softPageLimit = options.maxPages ?? (options.all ? 15 : 1);
 	let pagesFetched = 0;
 	let stagnantRounds = 0;
+	const cursorOffset = options.cursor ? decodeOffsetCursor(options.cursor) : 0;
+	let reachedPageEnd = false;
+	let windowSatisfied = false;
 
 	while (pagesFetched < softPageLimit) {
 		pagesFetched += 1;
@@ -242,31 +346,60 @@ export async function collectUsers(
 			if (seen.has(dedupeKey)) continue;
 			seen.add(dedupeKey);
 			users.push(parsed);
-			if (!options.all && users.length >= options.count) {
-				return {
-					items: users.slice(0, options.count),
-					pagesFetched,
-					nextCursor: undefined,
-				};
+			if (!options.all && users.length >= cursorOffset + options.count) {
+				windowSatisfied = true;
+				break;
 			}
 		}
 
-		if (!options.all) break;
+		if (windowSatisfied) {
+			break;
+		}
+
+		if (!options.all) {
+			break;
+		}
 		if (users.length === before) {
 			stagnantRounds += 1;
 		} else {
 			stagnantRounds = 0;
 		}
-		if (stagnantRounds >= 2) break;
+		if (stagnantRounds >= 2) {
+			reachedPageEnd = true;
+			break;
+		}
 
 		await scrollPage(page, 2200);
 		await page.waitForTimeout(options.delayMs);
 	}
 
+	const returnAllItems = options.all && !options.cursor;
+	const start = Math.max(0, cursorOffset);
+	const end = start + options.count;
+	const windowedItems = returnAllItems ? users : users.slice(start, end);
+	const hasMoreInMemory = start + windowedItems.length < users.length;
+	const hitPageLimit =
+		options.all && !reachedPageEnd && pagesFetched >= softPageLimit;
+	const hasMorePotential =
+		hasMoreInMemory ||
+		hitPageLimit ||
+		(!options.all && users.length >= start + options.count);
+	const nextCursor =
+		!returnAllItems && hasMorePotential && windowedItems.length > 0
+			? encodeOffsetCursor(start + windowedItems.length)
+			: undefined;
+
 	return {
-		items: options.all ? users : users.slice(0, options.count),
+		items: windowedItems,
 		pagesFetched,
-		nextCursor: undefined,
+		nextCursor,
+		raw: {
+			mode: "playwright-scrape",
+			collected: users.length,
+			offset: start,
+			returnAllItems,
+			hitPageLimit,
+		},
 	};
 }
 

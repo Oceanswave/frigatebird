@@ -105,6 +105,14 @@
 			"negate": false
 		},
 		{
+			"flags": "--compat-json",
+			"long": "--compat-json",
+			"short": null,
+			"required": false,
+			"optional": false,
+			"negate": false
+		},
+		{
 			"flags": "--plain",
 			"long": "--plain",
 			"short": null,

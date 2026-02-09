@@ -21,6 +21,7 @@ describe("options parser", () => {
 		const parsed = parseGlobalOptions({
 			cookieSource: ["firefox", "chrome"],
 			cookieSourceExplicit: true,
+			compatJson: true,
 			headless: false,
 			media: ["a.png", "b.png"],
 			alt: "desc",
@@ -29,6 +30,7 @@ describe("options parser", () => {
 
 		expect(parsed.cookieSource).toEqual(["firefox", "chrome"]);
 		expect(parsed.cookieSourceExplicit).toBe(true);
+		expect(parsed.compatJson).toBe(true);
 		expect(parsed.headless).toBe(false);
 		expect(parsed.media).toEqual(["a.png", "b.png"]);
 		expect(parsed.alt).toEqual(["desc"]);

@@ -91,6 +91,7 @@ export function parseGlobalOptions(
 		quoteDepth: parseOptionalPositiveInt(
 			raw.quoteDepth as string | number | undefined,
 		),
+		compatJson: Boolean(raw.compatJson),
 		plain: Boolean(raw.plain),
 		emoji: raw.emoji === undefined ? true : Boolean(raw.emoji),
 		color: raw.color === undefined ? true : Boolean(raw.color),
