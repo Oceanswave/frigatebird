@@ -2,6 +2,26 @@ name: Live E2E
 
 on:
   workflow_dispatch:
+    inputs:
+      list_name:
+        description: "X list name used for add/remove/batch mutation checks"
+        required: true
+        type: string
+      cookie_source:
+        description: "Primary cookie source for live mutation commands"
+        required: false
+        default: "safari"
+        type: string
+      expected_handle_prefix:
+        description: "Safety guard: authenticated handle must start with this prefix"
+        required: false
+        default: "frigatebird_"
+        type: string
+      target_handle:
+        description: "Handle used for follow/list mutation checks"
+        required: false
+        default: "Oceanswave"
+        type: string
 
 concurrency:
   group: live-e2e-${{ github.ref }}
@@ -15,10 +35,9 @@ jobs:
       contents: read
     env:
       FRIGATEBIRD_LIVE_E2E: "1"
-      FRIGATEBIRD_LIVE_COOKIE_SOURCE: ${{ vars.FRIGATEBIRD_LIVE_COOKIE_SOURCE || 'chrome' }}
-      FRIGATEBIRD_LIVE_EXPECTED_HANDLE_PREFIX: ${{ vars.FRIGATEBIRD_LIVE_EXPECTED_HANDLE_PREFIX || 'frigatebird_' }}
-      FRIGATEBIRD_LIVE_TARGET_HANDLE: ${{ vars.FRIGATEBIRD_LIVE_TARGET_HANDLE || 'Oceanswave' }}
-      LIVE_LIST_NAME: ${{ vars.FRIGATEBIRD_LIVE_LIST_NAME }}
+      FRIGATEBIRD_LIVE_EXPECTED_HANDLE_PREFIX: ${{ github.event.inputs.expected_handle_prefix || 'frigatebird_' }}
+      FRIGATEBIRD_LIVE_TARGET_HANDLE: ${{ github.event.inputs.target_handle || 'Oceanswave' }}
+      FRIGATEBIRD_LIVE_ENABLE_PREMIUM_FEATURES_E2E: "0"
       FRIGATEBIRD_AUTH_TOKEN: ${{ secrets.FRIGATEBIRD_AUTH_TOKEN }}
       FRIGATEBIRD_CT0: ${{ secrets.FRIGATEBIRD_CT0 }}
       NO_COLOR: "1"
@@ -47,8 +66,8 @@ jobs:
             missing=1
           fi
 
-          if [ -z "$LIVE_LIST_NAME" ]; then
-            echo "Missing required repository variable: FRIGATEBIRD_LIVE_LIST_NAME"
+          if [ -z "${{ github.event.inputs.list_name }}" ]; then
+            echo "Missing required workflow input: list_name"
             missing=1
           fi
 
@@ -63,4 +82,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run live mutation e2e
-        run: npm run test:e2e:live -- --list-name "$LIVE_LIST_NAME"
+        run: |
+          npm run test:e2e:live -- \
+            --list-name "${{ github.event.inputs.list_name }}" \
+            --cookie-source "${{ github.event.inputs.cookie_source || 'safari' }}"

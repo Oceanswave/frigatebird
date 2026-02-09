@@ -3,11 +3,19 @@ import path from "node:path";
 
 interface ParsedArgs {
 	listName?: string;
+	cookieSource?: string;
+	articleCookieSource?: string;
+	articleExpectedHandlePrefix?: string;
+	enablePremiumFeaturesE2E: boolean;
 	passThrough: string[];
 }
 
 function parseArgs(args: string[]): ParsedArgs {
 	let listName: string | undefined;
+	let cookieSource: string | undefined;
+	let articleCookieSource: string | undefined;
+	let articleExpectedHandlePrefix: string | undefined;
+	let enablePremiumFeaturesE2E = false;
 	const passThrough: string[] = [];
 
 	for (let index = 0; index < args.length; index += 1) {
@@ -29,6 +37,58 @@ function parseArgs(args: string[]): ParsedArgs {
 			continue;
 		}
 
+		if (arg === "--cookie-source") {
+			const value = args[index + 1];
+			if (!value || value.startsWith("--")) {
+				throw new Error("--cookie-source requires a value");
+			}
+			cookieSource = value.trim();
+			index += 1;
+			continue;
+		}
+
+		if (arg.startsWith("--cookie-source=")) {
+			cookieSource = arg.slice("--cookie-source=".length).trim();
+			continue;
+		}
+
+		if (arg === "--article-cookie-source") {
+			const value = args[index + 1];
+			if (!value || value.startsWith("--")) {
+				throw new Error("--article-cookie-source requires a value");
+			}
+			articleCookieSource = value.trim();
+			index += 1;
+			continue;
+		}
+
+		if (arg.startsWith("--article-cookie-source=")) {
+			articleCookieSource = arg.slice("--article-cookie-source=".length).trim();
+			continue;
+		}
+
+		if (arg === "--article-expected-handle-prefix") {
+			const value = args[index + 1];
+			if (!value || value.startsWith("--")) {
+				throw new Error("--article-expected-handle-prefix requires a value");
+			}
+			articleExpectedHandlePrefix = value.trim();
+			index += 1;
+			continue;
+		}
+
+		if (arg.startsWith("--article-expected-handle-prefix=")) {
+			articleExpectedHandlePrefix = arg
+				.slice("--article-expected-handle-prefix=".length)
+				.trim();
+			continue;
+		}
+
+		if (arg === "--enable-premium-features-e2e") {
+			enablePremiumFeaturesE2E = true;
+			continue;
+		}
+
 		passThrough.push(arg);
 	}
 
@@ -38,7 +98,14 @@ function parseArgs(args: string[]): ParsedArgs {
 		);
 	}
 
-	return { listName, passThrough };
+	return {
+		listName,
+		cookieSource,
+		articleCookieSource,
+		articleExpectedHandlePrefix,
+		enablePremiumFeaturesE2E,
+		passThrough,
+	};
 }
 
 function run(): void {
@@ -67,6 +134,25 @@ function run(): void {
 			...process.env,
 			FRIGATEBIRD_LIVE_E2E: "1",
 			FRIGATEBIRD_LIVE_LIST_NAME: parsed.listName,
+			...(parsed.cookieSource
+				? { FRIGATEBIRD_LIVE_COOKIE_SOURCE: parsed.cookieSource }
+				: {}),
+			...(parsed.articleCookieSource
+				? {
+						FRIGATEBIRD_LIVE_ARTICLE_COOKIE_SOURCE: parsed.articleCookieSource,
+					}
+				: {}),
+			...(parsed.articleExpectedHandlePrefix
+				? {
+						FRIGATEBIRD_LIVE_ARTICLE_EXPECTED_HANDLE_PREFIX:
+							parsed.articleExpectedHandlePrefix,
+					}
+				: {}),
+			...(parsed.enablePremiumFeaturesE2E
+				? {
+						FRIGATEBIRD_LIVE_ENABLE_PREMIUM_FEATURES_E2E: "1",
+					}
+				: {}),
 		},
 	});
 

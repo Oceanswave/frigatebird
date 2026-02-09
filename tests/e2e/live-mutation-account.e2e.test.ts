@@ -15,6 +15,8 @@ const TSX_BIN = path.resolve(ROOT, "node_modules/.bin/tsx");
 
 const LIVE_ENABLED = process.env.FRIGATEBIRD_LIVE_E2E === "1";
 const COOKIE_SOURCE = process.env.FRIGATEBIRD_LIVE_COOKIE_SOURCE ?? "safari";
+const ARTICLE_COOKIE_SOURCE =
+	process.env.FRIGATEBIRD_LIVE_ARTICLE_COOKIE_SOURCE ?? "chrome";
 const COOKIE_TIMEOUT_MS =
 	process.env.FRIGATEBIRD_LIVE_COOKIE_TIMEOUT_MS ?? "15000";
 const CLI_TIMEOUT_MS = Number.parseInt(
@@ -23,6 +25,11 @@ const CLI_TIMEOUT_MS = Number.parseInt(
 );
 const EXPECTED_PREFIX =
 	process.env.FRIGATEBIRD_LIVE_EXPECTED_HANDLE_PREFIX ?? "frigatebird_";
+const ARTICLE_EXPECTED_PREFIX =
+	process.env.FRIGATEBIRD_LIVE_ARTICLE_EXPECTED_HANDLE_PREFIX ??
+	EXPECTED_PREFIX;
+const ENABLE_PREMIUM_FEATURES_E2E =
+	process.env.FRIGATEBIRD_LIVE_ENABLE_PREMIUM_FEATURES_E2E === "1";
 const TARGET_HANDLE =
 	process.env.FRIGATEBIRD_LIVE_TARGET_HANDLE ?? "Oceanswave";
 const LIST_NAME = process.env.FRIGATEBIRD_LIVE_LIST_NAME?.trim();
@@ -31,6 +38,10 @@ interface CliResult {
 	stdout: string;
 	stderr: string;
 	code: number;
+}
+
+interface RunCliOptions {
+	cookieSource?: string;
 }
 
 interface TweetItem {
@@ -50,11 +61,15 @@ function expectCliOk(result: CliResult, args: string[]): void {
 	expect(result.code, formatCliFailure(args, result)).toBe(0);
 }
 
-async function runCli(args: string[]): Promise<CliResult> {
+async function runCli(
+	args: string[],
+	options: RunCliOptions = {},
+): Promise<CliResult> {
 	const env = {
 		...process.env,
 		NO_COLOR: "1",
 	};
+	const cookieSource = options.cookieSource?.trim() || COOKIE_SOURCE;
 
 	try {
 		const { stdout, stderr } = await execFileAsync(
@@ -62,7 +77,7 @@ async function runCli(args: string[]): Promise<CliResult> {
 			[
 				"src/cli.ts",
 				"--cookie-source",
-				COOKIE_SOURCE,
+				cookieSource,
 				"--cookie-timeout",
 				COOKIE_TIMEOUT_MS,
 				"--plain",
@@ -96,13 +111,14 @@ async function runCliWithRetries(
 	args: string[],
 	attempts = 3,
 	delayMs = 1500,
+	options: RunCliOptions = {},
 ): Promise<CliResult> {
-	let last = await runCli(args);
+	let last = await runCli(args, options);
 	if (last.code === 0) return last;
 
 	for (let attempt = 2; attempt <= attempts; attempt += 1) {
 		await new Promise((resolve) => setTimeout(resolve, delayMs));
-		last = await runCli(args);
+		last = await runCli(args, options);
 		if (last.code === 0) return last;
 	}
 
@@ -230,6 +246,39 @@ describe("live mutation e2e (opt-in)", () => {
 		expectCliOk(queryIds, queryIdsArgs);
 		const queryIdsJson = parseJson<{ mode: string }>(queryIds.stdout);
 		expect(queryIdsJson.mode).toBe("playwright");
+
+		if (ENABLE_PREMIUM_FEATURES_E2E) {
+			const articleWhoamiArgs = ["whoami", "--json"];
+			const articleWhoami = await runCliWithRetries(
+				articleWhoamiArgs,
+				3,
+				1500,
+				{
+					cookieSource: ARTICLE_COOKIE_SOURCE,
+				},
+			);
+			expectCliOk(articleWhoami, articleWhoamiArgs);
+			const articleMe = parseJson<{ handle?: string }>(articleWhoami.stdout);
+			expect(articleMe.handle).toBeTruthy();
+
+			if (!articleMe.handle?.startsWith(ARTICLE_EXPECTED_PREFIX)) {
+				throw new Error(
+					`Refusing live article mutation: authenticated handle @${articleMe.handle ?? "unknown"} for cookie source "${ARTICLE_COOKIE_SOURCE}" does not start with expected prefix "${ARTICLE_EXPECTED_PREFIX}". Override with FRIGATEBIRD_LIVE_ARTICLE_EXPECTED_HANDLE_PREFIX if intentional.`,
+				);
+			}
+
+			const articleTag = `frigatebird-live-article-${Date.now()}`;
+			const articleTitle = `Live mutation article ${articleTag}`;
+			const articleBody = `Frigatebird live mutation article body (${articleTag}).
+
+This article validates the article publish command in live mode.`;
+			const articleArgs = ["article", articleTitle, articleBody];
+			const article = await runCliWithRetries(articleArgs, 2, 2500, {
+				cookieSource: ARTICLE_COOKIE_SOURCE,
+			});
+			expectCliOk(article, articleArgs);
+			expect(article.stdout).toMatch(/article published/i);
+		}
 
 		const tweetTag = `frigatebird-live-${Date.now()}`;
 		const tweetArgs = ["tweet", `Live mutation smoke (${tweetTag})`];
