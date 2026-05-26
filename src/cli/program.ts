@@ -24,6 +24,10 @@ export function registerGlobalOptions(program: Command): Command {
 			"Firefox profile name for cookie extraction",
 		)
 		.option(
+			"--zen-profile <name>",
+			"Zen browser profile name or path for cookie extraction",
+		)
+		.option(
 			"--cookie-timeout <ms>",
 			"Cookie extraction timeout in milliseconds",
 		)

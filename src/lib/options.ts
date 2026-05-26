@@ -43,10 +43,11 @@ function parseCookieSources(value: unknown): CookieSource[] {
 			parsed !== "chrome" &&
 			parsed !== "firefox" &&
 			parsed !== "safari" &&
-			parsed !== "edge"
+			parsed !== "edge" &&
+			parsed !== "zen"
 		) {
 			throw new Error(
-				`Invalid cookie source "${parsed}". Allowed: chrome, firefox, safari, edge.`,
+				`Invalid cookie source "${parsed}". Allowed: chrome, firefox, safari, edge, zen.`,
 			);
 		}
 		normalized.push(parsed);
@@ -80,6 +81,7 @@ export function parseGlobalOptions(
 			? String(raw.chromeProfileDir)
 			: undefined,
 		firefoxProfile: raw.firefoxProfile ? String(raw.firefoxProfile) : undefined,
+		zenProfile: raw.zenProfile ? String(raw.zenProfile) : undefined,
 		cookieTimeout: parseOptionalPositiveInt(
 			raw.cookieTimeout as string | number | undefined,
 		),

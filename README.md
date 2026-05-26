@@ -112,10 +112,11 @@ frigatebird batch accounts.json
 - `--auth-token <token>`
 - `--ct0 <token>`
 - `--base-url <url>` (default `https://x.com`, useful for fixture/e2e)
-- `--cookie-source <chrome|firefox|safari|edge>` (repeatable)
+- `--cookie-source <chrome|firefox|safari|edge|zen>` (repeatable)
 - `--chrome-profile <name>`
 - `--chrome-profile-dir <path>`
 - `--firefox-profile <name>`
+- `--zen-profile <name|path>` (Zen browser; Firefox-compatible profile)
 - `--cookie-timeout <ms>`
 - `--timeout <ms>`
 - `--quote-depth <n>`
@@ -164,7 +165,7 @@ Config files:
 Supported keys:
 - `authToken`, `ct0`, `baseUrl`
 - `cookieSource`
-- `chromeProfile`, `chromeProfileDir`, `firefoxProfile`
+- `chromeProfile`, `chromeProfileDir`, `firefoxProfile`, `zenProfile`
 - `cookieTimeoutMs`, `timeoutMs`, `quoteDepth`
 
 Example:
@@ -182,7 +183,7 @@ Environment vars:
 - auth: `AUTH_TOKEN`, `CT0`, `TWITTER_AUTH_TOKEN`, `TWITTER_CT0`
 - cookie source: `BIRD_COOKIE_SOURCE`, `FRIGATEBIRD_COOKIE_SOURCE`
 - base URL: `BIRD_BASE_URL`, `FRIGATEBIRD_BASE_URL`
-- profiles: `BIRD_CHROME_PROFILE`, `BIRD_CHROME_PROFILE_DIR`, `BIRD_FIREFOX_PROFILE` and `FRIGATEBIRD_*` variants
+- profiles: `BIRD_CHROME_PROFILE`, `BIRD_CHROME_PROFILE_DIR`, `BIRD_FIREFOX_PROFILE`, `BIRD_ZEN_PROFILE` and `FRIGATEBIRD_*` variants
 - timeouts/depth: `BIRD_TIMEOUT_MS`, `BIRD_COOKIE_TIMEOUT_MS`, `BIRD_QUOTE_DEPTH` and `FRIGATEBIRD_*` variants
 - output: `NO_COLOR`, `BIRD_PLAIN`, `FRIGATEBIRD_PLAIN`
 

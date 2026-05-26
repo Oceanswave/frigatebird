@@ -43,6 +43,15 @@ describe("options parser", () => {
 		);
 	});
 
+	it("accepts zen as a cookie source", () => {
+		const parsed = parseGlobalOptions({
+			cookieSource: ["zen"],
+			zenProfile: "/tmp/zen-profile",
+		});
+		expect(parsed.cookieSource).toEqual(["zen"]);
+		expect(parsed.zenProfile).toBe("/tmp/zen-profile");
+	});
+
 	it("enables pagination all mode when maxPages is provided", () => {
 		const parsed = parsePaginationOptions(
 			{ count: "7", maxPages: "3" },
