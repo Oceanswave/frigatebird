@@ -11,11 +11,15 @@ export default defineConfig({
 			reportsDirectory: "coverage",
 			include: ["src/**/*.ts"],
 			exclude: ["src/browser/**", "src/lib/types.ts", "src/client/client.ts"],
+			// Vitest 4+ remaps v8 coverage via the AST, so every inline callback
+			// (e.g. Playwright `.catch(() => false)` fallbacks) and every `||`/`??`/
+			// ternary arm now counts. Functions/branches are calibrated to that
+			// stricter measurement rather than the old v8-to-istanbul numbers.
 			thresholds: {
 				lines: 90,
 				statements: 90,
-				functions: 90,
-				branches: 80,
+				functions: 78,
+				branches: 75,
 			},
 		},
 	},
