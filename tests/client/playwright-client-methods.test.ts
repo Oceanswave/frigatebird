@@ -84,6 +84,21 @@ describe("PlaywrightXClient methods", () => {
 		expect(result.ok).toBe(true);
 	});
 
+	it("resolves whoami from the authenticated session", async () => {
+		const sessions = sessionStub();
+		const client: any = new PlaywrightXClient(options, sessions as any);
+		const page = pageStub();
+		client.withPage = vi.fn(async (task: any) => task(page));
+		client.ensureAuth = vi.fn(async () => {});
+
+		await expect(client.whoami()).resolves.toEqual({
+			name: "Tester",
+			handle: "tester",
+		});
+		expect(client.ensureAuth).toHaveBeenCalledWith(page);
+		expect(sessions.whoAmI).toHaveBeenCalledWith(page);
+	});
+
 	it("falls back to home composer when compose route selector lookup fails", async () => {
 		const client: any = new PlaywrightXClient(options, sessionStub() as any);
 		client.withPage = vi.fn(async (task: any) => task(pageStub()));

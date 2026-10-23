@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	ensurePositive,
 	parseBookmarkOptions,
 	parseFollowListOptions,
 	parseGlobalOptions,
@@ -99,5 +100,18 @@ describe("options parser", () => {
 	it("returns media warnings for invalid media/alt combinations", () => {
 		const warnings = validateMediaOptions(["1", "2"], ["a", "b", "c"]);
 		expect(warnings.length).toBe(1);
+	});
+
+	it("warns when more than four media attachments are provided", () => {
+		const warnings = validateMediaOptions(["1", "2", "3", "4", "5"], []);
+		expect(warnings).toEqual([expect.stringContaining("up to 4 media")]);
+	});
+
+	it("rejects non-positive or non-finite values", () => {
+		expect(() => ensurePositive(3, "--count")).not.toThrow();
+		expect(() => ensurePositive(0, "--count")).toThrow(
+			"--count must be a positive integer.",
+		);
+		expect(() => ensurePositive(Number.NaN, "--count")).toThrow();
 	});
 });
