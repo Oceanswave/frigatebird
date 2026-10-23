@@ -50,7 +50,7 @@ Frigatebird is a Playwright-first CLI and npm package (`frigatebird`) that prese
 
 ## Options That Matter Most
 
-- Auth/cookies: `--auth-token`, `--ct0`, `--cookie-source`, `--chrome-profile`, `--firefox-profile`
+- Auth/cookies: `--auth-token`, `--ct0`, `--cookie-source` (chrome|firefox|safari|edge|zen), `--chrome-profile`, `--firefox-profile`, `--zen-profile`
 - Determinism/testing: `--base-url`, `--plain`, `--no-color`
 - Pagination: `-n`, `--all`, `--max-pages`, `--cursor`, `--delay`
 - Output: `--json`, `--json-full`

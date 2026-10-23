@@ -5,6 +5,8 @@ import { type BrowserName, getCookies } from "@steipete/sweet-cookie";
 import type { Cookie } from "playwright";
 import type { CookieSource, GlobalOptions } from "../lib/types.js";
 
+type SweetCookieBrowser = Exclude<CookieSource, "zen">;
+
 interface PersistedAuth {
 	cookies: Cookie[];
 	source?: string;
@@ -53,8 +55,62 @@ function toPlaywrightCookie(cookie: {
 	};
 }
 
-function mapSource(value: CookieSource): BrowserName {
+function mapSource(value: SweetCookieBrowser): BrowserName {
 	return value;
+}
+
+function looksLikePath(value: string): boolean {
+	return value.includes("/") || value.includes("\\");
+}
+
+function zenProfilesRoots(): string[] {
+	const home = homedir();
+	if (process.platform === "darwin") {
+		return [path.join(home, "Library", "Application Support", "zen", "Profiles")];
+	}
+	if (process.platform === "linux") {
+		return [path.join(home, ".zen"), path.join(home, ".var", "app", "io.github.zen_browser.zen", "data", "zen")];
+	}
+	if (process.platform === "win32") {
+		const appData = process.env.APPDATA;
+		return appData ? [path.join(appData, "zen", "Profiles")] : [];
+	}
+	return [];
+}
+
+function safeReaddir(dir: string): string[] {
+	try {
+		return fs
+			.readdirSync(dir, { withFileTypes: true })
+			.filter((entry) => entry.isDirectory())
+			.map((entry) => entry.name);
+	} catch {
+		return [];
+	}
+}
+
+export function resolveZenProfileDir(profile?: string): string | null {
+	if (profile && looksLikePath(profile)) {
+		return fs.existsSync(profile) ? profile : null;
+	}
+
+	for (const root of zenProfilesRoots()) {
+		if (!fs.existsSync(root)) continue;
+		if (profile) {
+			const candidate = path.join(root, profile);
+			if (fs.existsSync(candidate)) return candidate;
+			continue;
+		}
+		const entries = safeReaddir(root);
+		const preferred =
+			entries.find((name) => /default[^/]*release/i.test(name)) ??
+			entries.find((name) => /default/i.test(name)) ??
+			entries[0];
+		if (!preferred) continue;
+		return path.join(root, preferred);
+	}
+
+	return null;
 }
 
 function formatError(error: unknown): string {
@@ -74,6 +130,17 @@ const SAFARI_COOKIE_STORE_PATH = path.join(
 );
 
 type CookieExtractor = typeof getCookies;
+type ExtractedCookies = Awaited<ReturnType<CookieExtractor>>["cookies"];
+
+function normalizeZenExpires(cookies: ExtractedCookies): ExtractedCookies {
+	return cookies.map((cookie) => {
+		if (cookie.expires === undefined || cookie.expires === null) return cookie;
+		if (cookie.expires > 1e11) {
+			return { ...cookie, expires: Math.floor(cookie.expires / 1000) };
+		}
+		return cookie;
+	});
+}
 
 export class AuthStore {
 	readonly authFile: string;
@@ -168,43 +235,68 @@ export class AuthStore {
 	async extractFromBrowser(
 		options: GlobalOptions,
 	): Promise<ResolvedCookies | null> {
-		const browsers = options.cookieSource.map(mapSource);
-		let extraction: Awaited<ReturnType<CookieExtractor>> | null = null;
-
-		try {
-			extraction = await this.cookieExtractor({
-				url: "https://x.com",
-				browsers,
-				chromeProfile: options.chromeProfileDir ?? options.chromeProfile,
-				firefoxProfile: options.firefoxProfile,
-				timeoutMs: options.cookieTimeout,
-			});
-		} catch (error) {
-			const diagnostics = [
-				`Browser cookie extraction failed: ${formatError(error)}.`,
-			];
-			if (options.cookieSource.includes("safari")) {
-				diagnostics.push(...this.diagnoseSafariCookieAccess());
-			}
-			this.setDiagnostics(diagnostics);
-			return null;
-		}
-
-		if (!extraction || extraction.cookies.length === 0) {
-			const diagnostics = [
-				`No cookies were extracted from sources: ${options.cookieSource.join(", ")}.`,
-			];
-			if (options.cookieSource.includes("safari")) {
-				diagnostics.push(...this.diagnoseSafariCookieAccess());
-			}
-			this.setDiagnostics(diagnostics);
-			return null;
-		}
-
-		const authToken = extraction.cookies.find(
-			(cookie) => cookie.name === "auth_token",
+		const standardSources = options.cookieSource.filter(
+			(source): source is SweetCookieBrowser => source !== "zen",
 		);
-		const ct0 = extraction.cookies.find((cookie) => cookie.name === "ct0");
+		const zenRequested = options.cookieSource.includes("zen");
+		const diagnostics: string[] = [];
+		const collected: Awaited<ReturnType<CookieExtractor>>["cookies"] = [];
+
+		if (standardSources.length > 0) {
+			try {
+				const extraction = await this.cookieExtractor({
+					url: "https://x.com",
+					browsers: standardSources.map(mapSource),
+					chromeProfile: options.chromeProfileDir ?? options.chromeProfile,
+					firefoxProfile: options.firefoxProfile,
+					timeoutMs: options.cookieTimeout,
+				});
+				collected.push(...(extraction?.cookies ?? []));
+			} catch (error) {
+				diagnostics.push(
+					`Browser cookie extraction failed: ${formatError(error)}.`,
+				);
+			}
+		}
+
+		if (zenRequested) {
+			const zenProfile = resolveZenProfileDir(options.zenProfile);
+			if (!zenProfile) {
+				diagnostics.push(
+					"Zen browser profile not found. Pass --zen-profile <path> or install Zen with at least one profile.",
+				);
+			} else {
+				try {
+					const extraction = await this.cookieExtractor({
+						url: "https://x.com",
+						browsers: ["firefox"],
+						firefoxProfile: zenProfile,
+						timeoutMs: options.cookieTimeout,
+					});
+					collected.push(...normalizeZenExpires(extraction?.cookies ?? []));
+				} catch (error) {
+					diagnostics.push(
+						`Zen cookie extraction failed: ${formatError(error)}.`,
+					);
+				}
+			}
+		}
+
+		if (collected.length === 0) {
+			if (diagnostics.length === 0) {
+				diagnostics.push(
+					`No cookies were extracted from sources: ${options.cookieSource.join(", ")}.`,
+				);
+			}
+			if (options.cookieSource.includes("safari")) {
+				diagnostics.push(...this.diagnoseSafariCookieAccess());
+			}
+			this.setDiagnostics(diagnostics);
+			return null;
+		}
+
+		const authToken = collected.find((cookie) => cookie.name === "auth_token");
+		const ct0 = collected.find((cookie) => cookie.name === "ct0");
 
 		if (!authToken || !ct0) {
 			this.setDiagnostics([

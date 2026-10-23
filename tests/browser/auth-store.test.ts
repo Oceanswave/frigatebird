@@ -166,4 +166,65 @@ describe("AuthStore", () => {
 
 		expect(diagnostics.join(" ")).toContain("No cookies were extracted");
 	});
+
+	it("routes zen cookie source through the firefox extractor with the zen profile", async () => {
+		const tmpFile = path.join(
+			os.tmpdir(),
+			`frigatebird-auth-${Date.now()}-zen.json`,
+		);
+		const zenProfile = fs.mkdtempSync(
+			path.join(os.tmpdir(), "frigatebird-zen-"),
+		);
+		const extractor = vi.fn(async (opts: { browsers?: string[] }) => {
+			if (opts.browsers?.[0] === "firefox") {
+				return {
+					cookies: [
+						{
+							name: "auth_token",
+							value: "zen-a",
+							domain: ".x.com",
+							path: "/",
+							secure: true,
+							httpOnly: true,
+							sameSite: "Lax",
+						},
+						{
+							name: "ct0",
+							value: "zen-c",
+							domain: ".x.com",
+							path: "/",
+							secure: true,
+							sameSite: "Lax",
+						},
+					],
+					warnings: [],
+				};
+			}
+			return { cookies: [], warnings: [] };
+		});
+
+		const store = new AuthStore(tmpFile, extractor as any);
+		const resolved = await store.extractFromBrowser(
+			baseOptions({
+				cookieSource: ["zen"],
+				cookieSourceExplicit: true,
+				zenProfile,
+			}),
+		);
+
+		try {
+			expect(resolved?.source).toBe("browser:zen");
+			expect(resolved?.cookies.map((c) => c.value)).toEqual(["zen-a", "zen-c"]);
+			expect(extractor).toHaveBeenCalledTimes(1);
+			expect(extractor).toHaveBeenCalledWith(
+				expect.objectContaining({
+					browsers: ["firefox"],
+					firefoxProfile: zenProfile,
+				}),
+			);
+		} finally {
+			fs.rmSync(zenProfile, { recursive: true, force: true });
+			if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
+		}
+	});
 });
