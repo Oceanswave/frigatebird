@@ -5,6 +5,13 @@ on:
     branches:
       - main
   pull_request:
+    # ready_for_review re-runs CI so a draft marked ready still reaches auto-merge.
+    # workflow_run only fires when this workflow completes.
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
     branches:
       - main
 

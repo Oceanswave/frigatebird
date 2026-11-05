@@ -1,39 +1,28 @@
-name: Enable PR Auto-Merge
-
+name: PR auto-merge (green CI)
+# Same-repo PRs that pass CI are squash-merged. Runs from the default branch via
+# workflow_run and calls the shared merge helper, which re-checks draft, reviews,
+# unresolved threads, and that every check on the exact head is green before
+# squash-merging. Fork PRs are never merged here.
 on:
-  pull_request_target:
-    types:
-      - opened
-      - reopened
-      - synchronize
-      - ready_for_review
-
-concurrency:
-  group: auto-merge-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
-
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+permissions:
+  contents: read
 jobs:
-  enable:
-    name: Enable Auto-Merge
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.draft == false }}
-    runs-on: ubuntu-latest
+  merge:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     permissions:
       contents: write
       pull-requests: write
-
-    steps:
-      - name: Enable auto-merge (squash)
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          REPO: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-
-          auto_enabled="$(gh pr view "$PR_NUMBER" --repo "$REPO" --json autoMergeRequest --jq '.autoMergeRequest != null')"
-          if [ "$auto_enabled" = "true" ]; then
-            echo "Auto-merge already enabled for PR #$PR_NUMBER"
-            exit 0
-          fi
-
-          gh pr merge "$PR_NUMBER" --repo "$REPO" --auto --squash --delete-branch
+      checks: read
+      statuses: read
+    uses: Oceanswave/github-workflows/.github/workflows/merge.yml@6cdca8dfad892359b266326b6f74ba012418dac4 # main
+    with:
+      runs-on: '["ubuntu-latest"]'
+      head-branch: ${{ github.event.workflow_run.head_branch }}
+      expected-head: ${{ github.event.workflow_run.head_sha }}
+      required-checks: '[{"name":"Lint Build Test","appId":15368}]'
