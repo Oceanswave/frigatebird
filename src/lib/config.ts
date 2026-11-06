@@ -11,6 +11,7 @@ export interface CliFileConfig {
 	chromeProfile?: string;
 	chromeProfileDir?: string;
 	firefoxProfile?: string;
+	zenProfile?: string;
 	cookieTimeoutMs?: number;
 	timeoutMs?: number;
 	quoteDepth?: number;
@@ -98,6 +99,7 @@ export function resolveEnvConfig(
 		chromeProfileDir:
 			env.BIRD_CHROME_PROFILE_DIR ?? env.FRIGATEBIRD_CHROME_PROFILE_DIR,
 		firefoxProfile: env.BIRD_FIREFOX_PROFILE ?? env.FRIGATEBIRD_FIREFOX_PROFILE,
+		zenProfile: env.BIRD_ZEN_PROFILE ?? env.FRIGATEBIRD_ZEN_PROFILE,
 		plain,
 		headless,
 		color: noColor ? false : undefined,

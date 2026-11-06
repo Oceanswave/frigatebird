@@ -1,4 +1,4 @@
-export type CookieSource = "chrome" | "firefox" | "safari" | "edge";
+export type CookieSource = "chrome" | "firefox" | "safari" | "edge" | "zen";
 
 export interface GlobalOptions {
 	authToken?: string;
@@ -7,6 +7,7 @@ export interface GlobalOptions {
 	chromeProfile?: string;
 	chromeProfileDir?: string;
 	firefoxProfile?: string;
+	zenProfile?: string;
 	cookieTimeout?: number;
 	cookieSource: CookieSource[];
 	cookieSourceExplicit?: boolean;

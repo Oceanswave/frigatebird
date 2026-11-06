@@ -57,6 +57,14 @@
 			"negate": false
 		},
 		{
+			"flags": "--zen-profile <name>",
+			"long": "--zen-profile",
+			"short": null,
+			"required": true,
+			"optional": false,
+			"negate": false
+		},
+		{
 			"flags": "--cookie-timeout <ms>",
 			"long": "--cookie-timeout",
 			"short": null,

@@ -65,6 +65,7 @@ export function parseGlobalCliOptions(
 		chromeProfile: fileConfig.chromeProfile,
 		chromeProfileDir: fileConfig.chromeProfileDir,
 		firefoxProfile: fileConfig.firefoxProfile,
+		zenProfile: fileConfig.zenProfile,
 		cookieTimeout: fileConfig.cookieTimeoutMs,
 		timeout: fileConfig.timeoutMs,
 		quoteDepth: fileConfig.quoteDepth,
