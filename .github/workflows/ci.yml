@@ -22,7 +22,9 @@ concurrency:
 jobs:
   verify:
     name: Lint Build Test
-    runs-on: ubuntu-latest
+    # Playwright 1.58.2 officially supports Ubuntu 24.04 and rejects 26.04,
+    # which is the current ubuntu-latest image.
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
 
