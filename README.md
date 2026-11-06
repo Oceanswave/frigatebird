@@ -143,7 +143,9 @@ Resolution order:
 2. env vars (`AUTH_TOKEN`, `CT0`, fallbacks below)
 3. browser cookie extraction via `@steipete/sweet-cookie`
 
-When `--cookie-source` is explicitly set and differs from cached auth source metadata, Frigatebird clears cached auth and re-resolves cookies from the requested source order.
+When `--cookie-source` is explicitly set and differs from cached auth source metadata, Frigatebird clears cached auth and re-resolves cookies from the requested source order. A cached Zen result is also refreshed when the explicit Zen profile changes.
+
+Zen is not in the default source list (`chrome`, `safari`, `firefox`). Pass `--cookie-source zen`. `--zen-profile <name|path>` accepts a `profiles.ini` display name, a profile directory name, or a path (`~` is expanded). Without it, Frigatebird uses the `Install` Default path in `profiles.ini`, then the profile marked `Default=1`, then the first sorted profile directory that contains `cookies.sqlite`. On Linux it tries the native `~/.zen` directory and then the Flatpak data directory. `auth_token` and `ct0` must come from the same source; the first requested source with both is used.
 
 If auth fails:
 ```bash

@@ -57,7 +57,7 @@
 			"negate": false
 		},
 		{
-			"flags": "--zen-profile <name>",
+			"flags": "--zen-profile <name|path>",
 			"long": "--zen-profile",
 			"short": null,
 			"required": true,
