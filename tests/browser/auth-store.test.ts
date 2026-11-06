@@ -423,18 +423,41 @@ describe("Zen profile discovery", () => {
 		).toBe(path.resolve(relativeDir));
 	});
 
+	it("falls back to a profile directory when profiles.ini cannot be read", () => {
+		const native = tempRoot("frigatebird-zen-unreadable-");
+		const flatpak = tempRoot("frigatebird-zen-unreadable-next-");
+		fs.writeFileSync(path.join(native, "profiles.ini"), "Default=missing\n");
+		fs.mkdirSync(path.join(native, "Crash Reports"));
+		writeCookiesDb(path.join(native, "alpha"));
+		fs.writeFileSync(path.join(flatpak, "profiles.ini"), "Default=other\n");
+		writeCookiesDb(path.join(flatpak, "other"));
+		const diagnostics: string[] = [];
+		const spy = vi.spyOn(fs, "readFileSync").mockImplementation(() => {
+			throw new Error("EACCES: permission denied");
+		});
+
+		try {
+			expect(resolveZenProfileDir(undefined, [native], diagnostics)).toBe(
+				path.join(native, "alpha"),
+			);
+			diagnostics.length = 0;
+			fs.rmSync(path.join(native, "alpha"), { recursive: true, force: true });
+			expect(
+				resolveZenProfileDir(undefined, [native, flatpak], diagnostics),
+			).toBe(path.join(flatpak, "other"));
+			expect(diagnostics.join(" ")).toContain("profiles.ini");
+			expect(diagnostics.join(" ")).toContain("EACCES");
+		} finally {
+			spy.mockRestore();
+		}
+	});
+
 	it("lists native then Flatpak roots, and macOS and Windows defaults", () => {
 		const home = "/home/example";
 		expect(zenProfileSearchRoots("linux", home)).toEqual([
 			path.join(home, ".zen"),
-			path.join(
-				home,
-				".var",
-				"app",
-				"io.github.zen_browser.zen",
-				"data",
-				"zen",
-			),
+			path.join(home, ".var", "app", "app.zen_browser.zen", ".zen"),
+			path.join(home, ".var", "app", "app.zen_browser.zen", "zen"),
 		]);
 		expect(zenProfileSearchRoots("darwin", home)).toEqual([
 			path.join(home, "Library", "Application Support", "zen", "Profiles"),
@@ -664,5 +687,84 @@ describe("cookie source pairing and expiry", () => {
 			zenProfile?: string;
 		};
 		expect(saved.zenProfile).toBe(second);
+	});
+
+	it("reuses cache when one browser wins an explicit multi-source request", async () => {
+		const profile = zenDir();
+		const extractor = vi.fn(
+			async (opts: { browsers?: string[]; firefoxProfile?: string }) => {
+				if (opts.browsers?.[0] === "chrome") {
+					return { cookies: [extractedPair("chrome")[0]], warnings: [] };
+				}
+				if (opts.firefoxProfile === profile) {
+					return { cookies: extractedPair("zen"), warnings: [] };
+				}
+				return { cookies: [], warnings: [] };
+			},
+		);
+		const store = new AuthStore(tempFile(), extractor as any);
+		const options = {
+			cookieSource: ["chrome" as const, "zen" as const],
+			cookieSourceExplicit: true,
+			zenProfile: profile,
+		};
+
+		const first = await store.resolve(baseOptions(options));
+		expect(first?.source).toBe("browser:zen");
+		const callsAfterFirst = extractor.mock.calls.length;
+		expect(callsAfterFirst).toBeGreaterThan(0);
+
+		const second = await store.resolve(baseOptions(options));
+		expect(second?.source).toBe("browser:zen");
+		expect(second?.cookies.map((cookie) => cookie.value)).toEqual([
+			"zen-auth",
+			"zen-ct0",
+		]);
+		expect(extractor).toHaveBeenCalledTimes(callsAfterFirst);
+		const saved = JSON.parse(fs.readFileSync(store.authFile, "utf8")) as {
+			source?: string;
+			requestedSources?: string[];
+		};
+		expect(saved.source).toBe("browser:zen");
+		expect(saved.requestedSources).toEqual(["chrome", "zen"]);
+
+		await store.resolve(
+			baseOptions({
+				...options,
+				cookieSource: ["zen", "chrome"],
+			}),
+		);
+		expect(extractor.mock.calls.length).toBeGreaterThan(callsAfterFirst);
+	});
+
+	it("passes a Chrome profile only to Chrome, not Edge", async () => {
+		const extractor = vi.fn(async (opts: { browsers?: string[] }) => {
+			if (opts.browsers?.[0] === "edge") {
+				return { cookies: [extractedPair("edge")[0]], warnings: [] };
+			}
+			return { cookies: extractedPair("chrome"), warnings: [] };
+		});
+		const store = new AuthStore(tempFile(), extractor as any);
+		const resolved = await store.extractFromBrowser(
+			baseOptions({
+				cookieSource: ["edge", "chrome"],
+				chromeProfile: "Profile 1",
+				chromeProfileDir: "/tmp/chrome-dir",
+			}),
+		);
+
+		expect(resolved?.source).toBe("browser:chrome");
+		expect(extractor).toHaveBeenCalledTimes(2);
+		expect(extractor.mock.calls[0]?.[0]).toEqual(
+			expect.objectContaining({ browsers: ["edge"] }),
+		);
+		expect(extractor.mock.calls[0]?.[0].chromeProfile).toBeUndefined();
+		expect(extractor.mock.calls[0]?.[0].firefoxProfile).toBeUndefined();
+		expect(extractor.mock.calls[1]?.[0]).toEqual(
+			expect.objectContaining({
+				browsers: ["chrome"],
+				chromeProfile: "/tmp/chrome-dir",
+			}),
+		);
 	});
 });

@@ -10,6 +10,7 @@ type SweetCookieBrowser = Exclude<CookieSource, "zen">;
 interface PersistedAuth {
 	cookies: Cookie[];
 	source?: string;
+	requestedSources?: CookieSource[];
 	createdAt?: string;
 	zenProfile?: string;
 }
@@ -17,7 +18,30 @@ interface PersistedAuth {
 export interface ResolvedCookies {
 	cookies: Cookie[];
 	source: string;
+	requestedSources?: CookieSource[];
 	zenProfile?: string;
+}
+
+function isCookieSource(value: string): value is CookieSource {
+	return (
+		value === "chrome" ||
+		value === "firefox" ||
+		value === "safari" ||
+		value === "edge" ||
+		value === "zen"
+	);
+}
+
+function parseSavedRequestedSources(
+	value: unknown,
+): CookieSource[] | undefined {
+	if (!Array.isArray(value)) return undefined;
+	const sources: CookieSource[] = [];
+	for (const item of value) {
+		if (typeof item !== "string" || !isCookieSource(item)) return undefined;
+		sources.push(item);
+	}
+	return sources.length > 0 ? sources : undefined;
 }
 
 function parseBrowserSourceList(source: string): string[] | null {
@@ -35,12 +59,11 @@ function normalizeDomain(domain?: string): string {
 	return domain.startsWith(".") ? domain : `.${domain}`;
 }
 
-// sweet-cookie's Firefox reader returns cookies.sqlite `expiry` unchanged.
-// Firefox stores unix seconds; Zen stores unix milliseconds. Chrome and Edge
-// already use normalizeExpiration: values above 1e13 are Chromium microseconds
-// since 1601, values above 1e10 are unix milliseconds, and smaller positive
-// values are unix seconds. The same cutoffs here turn Zen milliseconds into
-// Playwright seconds without converting values that are already seconds.
+// sweet-cookie's Gecko reader returns cookies.sqlite `expiry` unchanged.
+// Firefox writes unix seconds; Zen writes unix milliseconds and is read
+// through that same reader. Chrome and Edge already use normalizeExpiration:
+// values above 1e13 are Chromium microseconds since 1601, values above 1e10
+// are unix milliseconds, and smaller positive values are unix seconds.
 const MILLISECOND_EPOCH_CUTOFF = 10_000_000_000;
 const CHROMIUM_MICROSECOND_CUTOFF = 10_000_000_000_000;
 const WINDOWS_EPOCH_OFFSET_SECONDS = 11_644_473_600;
@@ -140,16 +163,14 @@ export function zenProfileSearchRoots(
 		];
 	}
 	if (platform === "linux") {
+		// Native tarball profiles live in ~/.zen. Flatpak id app.zen_browser.zen
+		// persists ~/.zen via --persist=.zen. The install guide also documents
+		// ~/.var/app/app.zen_browser.zen/zen.
+		const flatpakRoot = path.join(home, ".var", "app", "app.zen_browser.zen");
 		return [
 			path.join(home, ".zen"),
-			path.join(
-				home,
-				".var",
-				"app",
-				"io.github.zen_browser.zen",
-				"data",
-				"zen",
-			),
+			path.join(flatpakRoot, ".zen"),
+			path.join(flatpakRoot, "zen"),
 		];
 	}
 	if (platform === "win32") {
@@ -283,12 +304,30 @@ function fallbackProfileDirs(dirs: string[]): string[] {
 	return matches;
 }
 
-function resolveWithinRoot(root: string, profile?: string): string | null {
+function readProfilesIni(
+	iniPath: string,
+	diagnostics?: string[],
+): { installs: IniInstall[]; profiles: IniProfile[] } {
+	try {
+		return parseProfilesIni(fs.readFileSync(iniPath, "utf8"));
+	} catch (error) {
+		diagnostics?.push(
+			`Zen profiles.ini could not be read at ${iniPath}: ${formatError(error)}.`,
+		);
+		return { installs: [], profiles: [] };
+	}
+}
+
+function resolveWithinRoot(
+	root: string,
+	profile?: string,
+	diagnostics?: string[],
+): string | null {
 	if (!isDirectory(root)) return null;
 	const ini = findProfilesIni(root);
 	const installDir = ini?.installDir ?? root;
 	const parsed = ini
-		? parseProfilesIni(fs.readFileSync(ini.iniPath, "utf8"))
+		? readProfilesIni(ini.iniPath, diagnostics)
 		: { installs: [], profiles: [] };
 	const searchDirs = [
 		...new Set([installDir, path.join(installDir, "Profiles"), root]),
@@ -336,6 +375,7 @@ function resolveWithinRoot(root: string, profile?: string): string | null {
 export function resolveZenProfileDir(
 	profile?: string,
 	roots: readonly string[] = zenProfileSearchRoots(),
+	diagnostics?: string[],
 ): string | null {
 	const selector = profile?.trim();
 	if (selector === "." || selector === "..") return null;
@@ -345,7 +385,11 @@ export function resolveZenProfileDir(
 	}
 
 	for (const root of roots) {
-		const resolved = resolveWithinRoot(root, selector || undefined);
+		const resolved = resolveWithinRoot(
+			root,
+			selector || undefined,
+			diagnostics,
+		);
 		if (resolved) return resolved;
 	}
 	return null;
@@ -424,9 +468,13 @@ export class AuthStore {
 			if (!Array.isArray(parsed.cookies) || parsed.cookies.length === 0)
 				return null;
 
+			const requestedSources = parseSavedRequestedSources(
+				parsed.requestedSources,
+			);
 			return {
 				cookies: parsed.cookies,
 				source: parsed.source ?? "auth.json",
+				...(requestedSources ? { requestedSources } : {}),
 				...(typeof parsed.zenProfile === "string" && parsed.zenProfile
 					? { zenProfile: parsed.zenProfile }
 					: {}),
@@ -436,11 +484,19 @@ export class AuthStore {
 		}
 	}
 
-	save(cookies: Cookie[], source: string, zenProfile?: string): void {
+	save(
+		cookies: Cookie[],
+		source: string,
+		zenProfile?: string,
+		requestedSources?: CookieSource[],
+	): void {
 		const payload: PersistedAuth = {
 			cookies,
 			source,
 			createdAt: new Date().toISOString(),
+			...(requestedSources && requestedSources.length > 0
+				? { requestedSources }
+				: {}),
 			...(zenProfile ? { zenProfile } : {}),
 		};
 
@@ -457,10 +513,27 @@ export class AuthStore {
 		saved: ResolvedCookies,
 		options: GlobalOptions,
 	): string | null {
+		const requested = options.cookieSource;
+		const savedRequest = saved.requestedSources;
+		if (savedRequest && savedRequest.length > 0) {
+			const sameRequest =
+				savedRequest.length === requested.length &&
+				savedRequest.every((value, index) => value === requested[index]);
+			if (!sameRequest) {
+				return `Cached auth source "${saved.source}" was ignored because --cookie-source was explicitly set to "${requested.join(",")}".`;
+			}
+			if (
+				saved.source === "browser:zen" &&
+				(saved.zenProfile ?? "") !== (options.zenProfile ?? "")
+			) {
+				return `Cached Zen profile "${saved.zenProfile ?? "default"}" was ignored because the requested Zen profile is "${options.zenProfile ?? "default"}".`;
+			}
+			return null;
+		}
+
+		// Caches written before requestedSources stored the request list in source.
 		const savedBrowsers = parseBrowserSourceList(saved.source);
 		if (!savedBrowsers) return null;
-
-		const requested = options.cookieSource;
 		const sourcesMatch =
 			savedBrowsers.length === requested.length &&
 			savedBrowsers.every((value, index) => value === requested[index]);
@@ -492,7 +565,11 @@ export class AuthStore {
 		diagnostics: string[],
 	): Promise<ExtractedCookies> {
 		if (source === "zen") {
-			const zenProfile = resolveZenProfileDir(options.zenProfile);
+			const zenProfile = resolveZenProfileDir(
+				options.zenProfile,
+				undefined,
+				diagnostics,
+			);
 			if (!zenProfile) {
 				diagnostics.push(
 					"Zen browser profile not found. Pass --zen-profile <name|path> or install Zen with at least one profile that contains cookies.sqlite.",
@@ -520,6 +597,8 @@ export class AuthStore {
 			const extraction = await this.cookieExtractor({
 				url: "https://x.com",
 				browsers: [mapSource(source)],
+				// sweet-cookie applies chromeProfile to Chrome only. Edge reads
+				// edgeProfile or the generic profile alias, not chromeProfile.
 				...(source === "chrome"
 					? {
 							chromeProfile: options.chromeProfileDir ?? options.chromeProfile,
@@ -596,6 +675,7 @@ export class AuthStore {
 				return {
 					cookies: this.cookiesFromPair(authToken, ct0),
 					source: `browser:${source}`,
+					requestedSources: [...options.cookieSource],
 					...(source === "zen" && options.zenProfile
 						? { zenProfile: options.zenProfile }
 						: {}),
@@ -677,7 +757,12 @@ export class AuthStore {
 		const extracted = await this.extractFromBrowser(options);
 		if (extracted) {
 			this.setDiagnostics([]);
-			this.save(extracted.cookies, extracted.source, extracted.zenProfile);
+			this.save(
+				extracted.cookies,
+				extracted.source,
+				extracted.zenProfile,
+				extracted.requestedSources,
+			);
 			return extracted;
 		}
 
