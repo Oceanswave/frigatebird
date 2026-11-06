@@ -24,12 +24,16 @@ export function registerGlobalOptions(program: Command): Command {
 			"Firefox profile name for cookie extraction",
 		)
 		.option(
+			"--zen-profile <name|path>",
+			"Zen profile display name, directory name, or path. Zen is not a default cookie source; pass --cookie-source zen.",
+		)
+		.option(
 			"--cookie-timeout <ms>",
 			"Cookie extraction timeout in milliseconds",
 		)
 		.option(
 			"--cookie-source <source>",
-			"Cookie source for browser extraction (repeatable)",
+			"Cookie source for browser extraction (repeatable). zen is opt-in and is not included by default.",
 			collect,
 		)
 		.option("--media <path>", "Attach media file path (repeatable)", collect)

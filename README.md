@@ -112,10 +112,11 @@ frigatebird batch accounts.json
 - `--auth-token <token>`
 - `--ct0 <token>`
 - `--base-url <url>` (default `https://x.com`, useful for fixture/e2e)
-- `--cookie-source <chrome|firefox|safari|edge>` (repeatable)
+- `--cookie-source <chrome|firefox|safari|edge|zen>` (repeatable)
 - `--chrome-profile <name>`
 - `--chrome-profile-dir <path>`
 - `--firefox-profile <name>`
+- `--zen-profile <name|path>` (Zen browser; Firefox-compatible profile)
 - `--cookie-timeout <ms>`
 - `--timeout <ms>`
 - `--quote-depth <n>`
@@ -142,7 +143,9 @@ Resolution order:
 2. env vars (`AUTH_TOKEN`, `CT0`, fallbacks below)
 3. browser cookie extraction via `@steipete/sweet-cookie`
 
-When `--cookie-source` is explicitly set and differs from cached auth source metadata, Frigatebird clears cached auth and re-resolves cookies from the requested source order.
+When `--cookie-source` is explicitly set and differs from cached auth source metadata, Frigatebird clears cached auth and re-resolves cookies from the requested source order. A cached Zen result is also refreshed when the explicit Zen profile changes.
+
+Zen is not in the default source list (`chrome`, `safari`, `firefox`). Pass `--cookie-source zen`. `--zen-profile <name|path>` accepts a `profiles.ini` display name, a profile directory name, or a path (`~` is expanded). Without it, Frigatebird uses the `Install` Default path in `profiles.ini`, then the profile marked `Default=1`, then the first sorted profile directory that contains `cookies.sqlite`. On Linux it tries `~/.zen`, then the Flatpak profile paths `~/.var/app/app.zen_browser.zen/.zen` and `~/.var/app/app.zen_browser.zen/zen`. `auth_token` and `ct0` must come from the same source; the first requested source with both is used.
 
 If auth fails:
 ```bash
@@ -164,7 +167,7 @@ Config files:
 Supported keys:
 - `authToken`, `ct0`, `baseUrl`
 - `cookieSource`
-- `chromeProfile`, `chromeProfileDir`, `firefoxProfile`
+- `chromeProfile`, `chromeProfileDir`, `firefoxProfile`, `zenProfile`
 - `cookieTimeoutMs`, `timeoutMs`, `quoteDepth`
 
 Example:
@@ -182,7 +185,7 @@ Environment vars:
 - auth: `AUTH_TOKEN`, `CT0`, `TWITTER_AUTH_TOKEN`, `TWITTER_CT0`
 - cookie source: `BIRD_COOKIE_SOURCE`, `FRIGATEBIRD_COOKIE_SOURCE`
 - base URL: `BIRD_BASE_URL`, `FRIGATEBIRD_BASE_URL`
-- profiles: `BIRD_CHROME_PROFILE`, `BIRD_CHROME_PROFILE_DIR`, `BIRD_FIREFOX_PROFILE` and `FRIGATEBIRD_*` variants
+- profiles: `BIRD_CHROME_PROFILE`, `BIRD_CHROME_PROFILE_DIR`, `BIRD_FIREFOX_PROFILE`, `BIRD_ZEN_PROFILE` and `FRIGATEBIRD_*` variants
 - timeouts/depth: `BIRD_TIMEOUT_MS`, `BIRD_COOKIE_TIMEOUT_MS`, `BIRD_QUOTE_DEPTH` and `FRIGATEBIRD_*` variants
 - output: `NO_COLOR`, `BIRD_PLAIN`, `FRIGATEBIRD_PLAIN`
 

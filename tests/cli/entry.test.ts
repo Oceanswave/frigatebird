@@ -85,12 +85,34 @@ describe("cli entry helpers", () => {
 		const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "frigatebird-local-"));
 		fs.writeFileSync(
 			path.join(tmp, ".frigatebirdrc.json5"),
-			`{ firefoxProfile: "default-release", cookieTimeoutMs: 4321 }`,
+			`{ firefoxProfile: "default-release", cookieTimeoutMs: 4321, zenProfile: "from-file" }`,
 		);
 		const options = parseGlobalCliOptions([], {}, tmp);
 
 		expect(options.firefoxProfile).toBe("default-release");
 		expect(options.cookieTimeout).toBe(4321);
+		expect(options.zenProfile).toBe("from-file");
+	});
+
+	it("plumbs zen profile from env and lets the CLI flag win", () => {
+		const fromBird = parseGlobalCliOptions([], {
+			BIRD_ZEN_PROFILE: "bird-profile",
+			FRIGATEBIRD_ZEN_PROFILE: "frigate-profile",
+			BIRD_COOKIE_SOURCE: "zen",
+		});
+		expect(fromBird.zenProfile).toBe("bird-profile");
+		expect(fromBird.cookieSource).toEqual(["zen"]);
+
+		const fromFrigate = parseGlobalCliOptions([], {
+			FRIGATEBIRD_ZEN_PROFILE: "frigate-profile",
+			FRIGATEBIRD_COOKIE_SOURCE: "zen",
+		});
+		expect(fromFrigate.zenProfile).toBe("frigate-profile");
+
+		const fromCli = parseGlobalCliOptions(["--zen-profile", "cli-profile"], {
+			BIRD_ZEN_PROFILE: "bird-profile",
+		});
+		expect(fromCli.zenProfile).toBe("cli-profile");
 	});
 
 	it("detects direct execution through symlinked bin path", () => {
