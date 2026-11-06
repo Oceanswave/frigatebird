@@ -32,7 +32,8 @@ Frigatebird is the continuity CLI for the deprecated `bird` project: it preserve
 ## GitHub Workflows
 
 - CI workflow: `/Users/oceanswave/Projects/frigatebird/.github/workflows/ci.yml`
-  - Runs on `pull_request` and `push` to `main`.
+  - Runs on `pull_request` (`opened`, `synchronize`, `reopened`, `ready_for_review`) and `push` to `main`.
+  - `ready_for_review` re-runs checks so a draft marked ready can reach auto-merge without a new commit.
   - Executes lint, build, unit/integration coverage tests, fixture e2e smoke, and package dry-run.
 - Release workflow: `/Users/oceanswave/Projects/frigatebird/.github/workflows/release.yml`
   - Runs on GitHub Release `published` events.
@@ -47,8 +48,8 @@ Frigatebird is the continuity CLI for the deprecated `bird` project: it preserve
     - optional guard/article vars (`FRIGATEBIRD_LIVE_E2E_EXPECTED_HANDLE_PREFIX`, `FRIGATEBIRD_LIVE_E2E_ARTICLE_COOKIE_SOURCE`, `FRIGATEBIRD_LIVE_E2E_ARTICLE_EXPECTED_HANDLE_PREFIX`)
   - Requires secrets `FRIGATEBIRD_AUTH_TOKEN` + `FRIGATEBIRD_CT0`.
 - Auto-merge workflow: `/Users/oceanswave/Projects/frigatebird/.github/workflows/auto-merge.yml`
-  - Runs on `pull_request_target`.
-  - Enables squash auto-merge for eligible non-draft PRs from branches in this repository.
+  - Runs on `workflow_run` when the CI workflow completes successfully for a same-repo pull request.
+  - Squash-merges eligible non-draft PRs from branches in this repository. Fork PRs are not merged.
 
 ## Packaging Checks
 
